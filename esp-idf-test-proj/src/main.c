@@ -25,7 +25,7 @@
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
 */
-#define EXAMPLE_ESP_WIFI_SSID      "mywifissid"
+#define EXAMPLE_ESP_WIFI_SSID      "mywifissid" //change to my network name?
 #define EXAMPLE_ESP_WIFI_PASS      "mywifipass"
 #define EXAMPLE_ESP_WIFI_CHANNEL   1
 #define EXAMPLE_MAX_STA_CONN       4
@@ -97,7 +97,7 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_AP");
-    wifi_init_softap();
+    wifi_init_softap(); //makes a software access point 
 
     //get wifi commands
 
