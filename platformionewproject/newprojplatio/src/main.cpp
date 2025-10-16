@@ -46,7 +46,7 @@ void loop() {
     JsonObject object = doc.to<JsonObject>(); //put json object into json document
     object[key] = value; //writing to the json object (which is now in the document)
 
-    serializeJson(doc, jsonOutput); //putting the doc we made (the doc has the object we made) into the jsonoutput char array we made
+    serializeJson(doc, jsonOutput); //putting the doc we made (the doc has the object we made) into the jsonoutput 
 
     int httpCode = client.POST(String(jsonOutput)); //the value of this number will tell you if it was successful
 
