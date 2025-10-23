@@ -11,15 +11,18 @@
 void setup() {
   // put your setup code here, to run once:
   pinMode(PIN, OUTPUT);
+  Serial.begin(9600);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
  digitalWrite(PIN, HIGH);
- delay(500);
+ Serial.println("Pin is high");
+ delay(10000);
  digitalWrite(PIN, LOW);
- delay(500);
- 
+ Serial.println("Pin is low");
+ delay(10000);
+
 }
 
 // put function definitions here:
