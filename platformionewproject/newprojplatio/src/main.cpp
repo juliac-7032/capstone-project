@@ -3,8 +3,8 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-const char* ssid = "***";
-const char* password = "*****";
+const char* ssid = "";
+const char* password = "";
 
 //all of this will be our occupancy data
 char jsonOutput[128]; //store the json we want to post
@@ -12,27 +12,9 @@ const char* key = "slay"; //words to put in the json object
 const char* value = "all day";
 
 // put function declarations here:
+void post(){
 
-
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi"); //connect to network
-
-  while (WiFi.status() != WL_CONNECTED){ //check that we are connected
-    Serial.print(".");
-    delay(500);
-  }
-
-  Serial.println("\nConnected to WiFi"); //print out IP address
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP()); 
-}
-
-void loop() {
-  // put your main code here, to run repeatedly:
-  if((WiFi.status() == WL_CONNECTED)){ //double check that the network is connected still
+ if((WiFi.status() == WL_CONNECTED)){ //double check that the network is connected still
     
     HTTPClient client; //instance of HTTPClient class
 
@@ -63,6 +45,28 @@ void loop() {
     Serial.println("connection lost");
   }
 
+
+}
+void setup() {
+ 
+  Serial.begin(9600);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi"); //connect to network
+
+  while (WiFi.status() != WL_CONNECTED){ //check that we are connected
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println("\nConnected to WiFi"); //print out IP address
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP()); 
+}
+
+void loop() {
+  
+  post();
+ 
   delay(10000);
 
 }
