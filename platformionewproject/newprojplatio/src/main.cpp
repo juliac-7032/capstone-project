@@ -1,7 +1,7 @@
-#include Arduino.h 
+#include <Arduino.h>
 
-#define RED 6
-#define GREEN 7
+int RED = 6;
+int GREEN = 7;
 
 double Tms = 1.0; 
 double duty = 0.1;
