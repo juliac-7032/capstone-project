@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include <Adafruit_NeoPixel.h>
+#include "light_colours.h"
 
 
-#define RED 6
-#define GREEN 7
+int red =  6;
+int green = 7;
 
 double Tms = 1.0; 
 double duty = 0.1;
@@ -13,20 +13,15 @@ double duty = 0.1;
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
+  pinMode(red, OUTPUT);
+  pinMode(green, OUTPUT);
   Serial.begin(9600);
   
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
- digitalWrite(RED, HIGH);
- digitalWrite(GREEN, HIGH);
- delay(Tms*duty);
- digitalWrite(RED, LOW);
- digitalWrite(GREEN, HIGH);
- delay(1.0 - (Tms*duty));
+  yellow_light(Tms, duty, red, green);
 }
 
 // put function definitions here:
