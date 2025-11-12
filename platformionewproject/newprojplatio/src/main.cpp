@@ -2,6 +2,7 @@
 #include "light_colours.h"
 #include <iostream>
 #include <chrono> 
+#include <ArduinoJson.h>
 
 int red =  6;
 int green = 7;
@@ -9,28 +10,45 @@ int delay_time = 500;
 double Tms = 1000; 
 double duty = 0.9;
 
+
+
+
+
 void setup() {
   
   pinMode(red, OUTPUT);
   pinMode(green, OUTPUT);
   Serial.begin(9600);
   
+
+  
+  
 }
 
 void loop() {
+
+
+  const char* input = "{\"sensor state\": \"occupied\"}"; //json input
+  JsonDocument doc; //craete document to hold the json
+  deserializeJson(doc, input); //put the input into the JsonDocument
+  const char* sensor_state = doc["sensor state"];
+
   
-  auto start_time = std::chrono::steady_clock::now();
 
-    // Define the target duration (10 seconds)
+  if(sensor_state = "occupied"){
+    auto start_time = std::chrono::steady_clock::now();
     auto target_duration = std::chrono::seconds(5);
-
-    // Loop until the target duration has passed
     while (std::chrono::steady_clock::now() - start_time < target_duration) {
-        Serial.println("hello world");
+      
+      Serial.println("light is on");
+
     }
 
+  }
+  
 
-    delay(20000);
+  delay(1000);
+  
   
 }
 
