@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "light_colours.h"
-
+#include <iostream>
+#include <chrono> 
 
 int red =  6;
 int green = 7;
@@ -18,38 +19,19 @@ void setup() {
 
 void loop() {
   
+  auto start_time = std::chrono::steady_clock::now();
+
+    // Define the target duration (10 seconds)
+    auto target_duration = std::chrono::seconds(5);
+
+    // Loop until the target duration has passed
+    while (std::chrono::steady_clock::now() - start_time < target_duration) {
+        Serial.println("hello world");
+    }
 
 
-
-
-
+    delay(20000);
   
-  red_light(Tms, duty, red);
-  delay(delay_time);
-  
-  red_light(Tms, duty, red);
-  delay(delay_time);
-
-  red_light(Tms, duty, red);
-  delay(delay_time);
-
-  yellow_light(Tms, duty, red, green);
-  delay(delay_time);
-
-  yellow_light(Tms, duty, red, green);
-  delay(delay_time);
-
-  yellow_light(Tms, duty, red, green);
-  delay(delay_time);
-
-  green_light(Tms, duty, green);
-  delay(delay_time);
-
-  green_light(Tms, duty, green);
-  delay(delay_time);
-
-  green_light(Tms, duty, green);
-  delay(delay_time);
 }
 
 // put function definitions here:
