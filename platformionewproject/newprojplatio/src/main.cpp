@@ -7,8 +7,8 @@
 int red =  6;
 int green = 7;
 int delay_time = 500;
-double Tms = 1000; 
-double duty = 0.9;
+double Tms = 1.0; 
+double duty = 0.1;
 
 
 
@@ -40,14 +40,14 @@ void loop() {
     auto target_duration = std::chrono::seconds(5);
     while (std::chrono::steady_clock::now() - start_time < target_duration) {
       
-      Serial.println("light is on");
+      red_light(Tms, duty, red);
 
     }
 
   }
   
 
-  delay(1000);
+  delay(10000);
   
   
 }
