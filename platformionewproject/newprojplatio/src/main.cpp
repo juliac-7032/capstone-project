@@ -4,15 +4,12 @@
 
 int red =  6;
 int green = 7;
-
-double Tms = 1.0; 
-double duty = 0.1;
-
-// put function declarations here:
-
+int delay_time = 500;
+double Tms = 1000; 
+double duty = 0.9;
 
 void setup() {
-  // put your setup code here, to run once:
+  
   pinMode(red, OUTPUT);
   pinMode(green, OUTPUT);
   Serial.begin(9600);
@@ -20,8 +17,39 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  
+
+
+
+
+
+  
+  red_light(Tms, duty, red);
+  delay(delay_time);
+  
+  red_light(Tms, duty, red);
+  delay(delay_time);
+
+  red_light(Tms, duty, red);
+  delay(delay_time);
+
   yellow_light(Tms, duty, red, green);
+  delay(delay_time);
+
+  yellow_light(Tms, duty, red, green);
+  delay(delay_time);
+
+  yellow_light(Tms, duty, red, green);
+  delay(delay_time);
+
+  green_light(Tms, duty, green);
+  delay(delay_time);
+
+  green_light(Tms, duty, green);
+  delay(delay_time);
+
+  green_light(Tms, duty, green);
+  delay(delay_time);
 }
 
 // put function definitions here:
