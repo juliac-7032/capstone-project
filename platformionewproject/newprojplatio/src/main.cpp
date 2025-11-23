@@ -10,9 +10,7 @@ int delay_time = 500;
 double Tms = 1.0; 
 double duty = 0.1;
 
-
-
-
+enum State{unoccupied = 0, occupied= 1, maintenance =2};
 
 void setup() {
   
@@ -20,34 +18,32 @@ void setup() {
   pinMode(green, OUTPUT);
   Serial.begin(9600);
   
-
-  
-  
 }
 
 void loop() {
 
-
-  const char* input = "{\"sensor state\": \"occupied\"}"; //json input
+  const char* input = "{\"sensor state\": \"unoccupied\"}"; //json input
   JsonDocument doc; //craete document to hold the json
   deserializeJson(doc, input); //put the input into the JsonDocument
-  const char* sensor_state = doc["sensor state"];
-
   
+  //State current_state = doc["sensor state"]; //json will map to the state variable
 
-  if(sensor_state = "occupied"){
-    auto start_time = std::chrono::steady_clock::now();
-    auto target_duration = std::chrono::seconds(5);
-    while (std::chrono::steady_clock::now() - start_time < target_duration) {
-      
-      red_light(Tms, duty, red);
+  State current_state = occupied;
 
-    }
+  switch(current_state){
+    case unoccupied: green_light(Tms, duty, green);
+                    Serial.println("green");
+                    break;
+    case occupied: red_light(Tms, duty, red);
+                    Serial.println("red");
+                    break;
+    case maintenance: yellow_light(Tms, duty, red, green); 
+                      Serial.println("yellow");                                
+                      break;
+    default: green_light(Tms, duty, green); 
+             Serial.println("default");                           
 
   }
-  
-
-  delay(10000);
   
   
 }
