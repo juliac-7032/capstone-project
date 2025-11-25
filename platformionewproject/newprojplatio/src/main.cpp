@@ -1,95 +1,63 @@
-#include <Arduino.h>
-#include <WiFi.h>
-#include <ArduinoJson.h>
-#include <HTTPClient.h>
+#include "Fsm.h"
 
-const char* ssid = "";
-const char* password = "";
+// State machine variables
+#define FLIP_LIGHT_SWITCH 1
 
-//all of this will be our occupancy data
-char jsonOutput[128]; //store the json we want to post
-const char* key = "slay"; //words to put in the json object
-const char* value = "all day";
+State state_light_on(on_light_on_enter, NULL, &on_light_on_exit);
+State state_light_off(on_light_off_enter, NULL, &on_light_off_exit);
+Fsm fsm(&state_light_off);
 
-// put function declarations here:
-void post(){
-
- if((WiFi.status() == WL_CONNECTED)){ //double check that the network is connected still
-    
-    HTTPClient client; //instance of HTTPClient class
-
-    client.begin("http://jsonplaceholder.typicode.com/posts"); //http that accepts posts (this is the API - we will have a different API)
-    client.addHeader("Content-Type", "application/json"); //tell API we're sending jason
-    
-    const size_t CAPACITY = JSON_OBJECT_SIZE(1); //fixed capacity when we make a json document
-    StaticJsonDocument<CAPACITY> doc; //create an empty json doc
-
-    //the json placeholder API should take care of the id for you
-    JsonObject object = doc.to<JsonObject>(); //put json object into json document
-    object[key] = value; //writing to the json object (which is now in the document)
-
-    serializeJson(doc, jsonOutput); //putting the doc we made (the doc has the object we made) into the jsonoutput char array we made
-
-    int httpCode = client.POST(String(jsonOutput)); //the value of this number will tell you if it was successful
-
-    if(httpCode > 0 ) {
-      String payload = client.getString(); //get the json information
-      Serial.println("\nStatuscode: " + String(httpCode)); //print whether it was successful
-      Serial.println(payload); //print the json infromation
-
-      client.end();
-    }
-
-  }
-  else {
-    Serial.println("connection lost");
-  }
-
-
+// Transition callback functions
+void on_light_on_enter()
+{
+  Serial.println("Entering LIGHT_ON");
 }
-void setup() {
- 
+
+void on_light_on_exit()
+{
+  Serial.println("Exiting LIGHT_ON");
+}
+
+void on_light_off_enter()
+{
+  Serial.println("Entering LIGHT_OFF");
+}
+
+void on_light_off_exit()
+{
+  Serial.println("Exiting LIGHT_OFF");
+}
+
+void on_trans_light_on_light_off()
+{
+  Serial.println("Transitioning from LIGHT_ON to LIGHT_OFF");
+}
+
+void on_trans_light_off_light_on()
+{
+  Serial.println("Transitioning from LIGHT_OFF to LIGHT_ON");
+}
+
+// standard arduino functions
+void setup()
+{
   Serial.begin(9600);
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi"); //connect to network
 
-  while (WiFi.status() != WL_CONNECTED){ //check that we are connected
-    Serial.print(".");
-    delay(500);
-  }
-
-  Serial.println("\nConnected to WiFi"); //print out IP address
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP()); 
+  fsm.add_transition(&state_light_on, &state_light_off,
+                     FLIP_LIGHT_SWITCH,
+                     &on_trans_light_on_light_off);
+  fsm.add_transition(&state_light_off, &state_light_on,
+                     FLIP_LIGHT_SWITCH,
+                     &on_trans_light_off_light_on);
 }
 
-void loop() {
-  
-  post();
- 
-  delay(10000);
-
+void loop()
+{
+  // No "fsm.run_machine()" call needed as no "on_state" funcions or timmed transitions exists
+  delay(2000);
+  fsm.trigger(FLIP_LIGHT_SWITCH);
+  delay(2000);
+  fsm.trigger(FLIP_LIGHT_SWITCH);
 }
-
-// put function definitions here:
-
-
-//pseudocode
-//read microwave data
-
-
-//1.
-//create json objects to store the data
-//"occupied": yes
-//post json to our API - let software take it from there
-
-//2. (could be at the same time or we could read the json that just got created)
-//if occupied
-//  turn the light red (change red pwm to 100 and the others to 0)
-//else if available
-//  turn the light green (green duty cycle)
-//else if cleaning ****for the cleaning should we do this as a schedule (we take info from the API that it's scheduled for maintenance)?
-//  turn yellow (red 50, green 50)
-
 
 
