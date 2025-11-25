@@ -4,11 +4,20 @@
 #include <chrono> 
 #include <ArduinoJson.h>
 
+//pins
 int red =  6; //name of pin on ESP32
 int green = 7;
 int PIR = 2;
+int echo_pin = 8;
+int trig_pin = 9;
+
+//sensor vars
 int PIR_val = 0;
-int delay_time = 500;
+int echo_val = 0;
+int trig_val;
+float duration, distance; 
+
+//light -related vars
 double Tms = 1.0; 
 double duty = 0.1;
 
@@ -16,15 +25,33 @@ void setup() {
   
   pinMode(red, OUTPUT);
   pinMode(green, OUTPUT);
-  pinMode(PIR, INPUT);
+  pinMode(PIR, INPUT); 
+  pinMode(echo_pin, INPUT);
+  pinMode(trig_pin, OUTPUT);
   Serial.begin(9600);
   
 }
 
 void loop() {
   
-  //State current_state = doc["sensor state"]; //json will map to the state variable
+  /* US testing code
+    digitalWrite(trig_pin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig_pin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig_pin, LOW);
+
+  duration = pulseIn(echo_pin, HIGH);
+  distance = (duration*.0343)/2;
+  Serial.print("Distance: ");
+  Serial.println(distance);
+  delay(100);
+  */
+
   
+  /*   
+
+  */
   PIR_val = digitalRead(PIR);
   if(PIR_val == HIGH){ //high on pir pin means motion detected
     red_light(Tms, duty, red);
