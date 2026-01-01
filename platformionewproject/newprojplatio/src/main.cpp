@@ -35,23 +35,24 @@ void setup() {
 void loop() {
   
   /* US testing code
-    digitalWrite(trig_pin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trig_pin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trig_pin, LOW);
+ digitalWrite(trig_pin, HIGH); //set trig pin high to monitor
 
-  duration = pulseIn(echo_pin, HIGH);
-  distance = (duration*.0343)/2;
-  Serial.print("Distance: ");
-  Serial.println(distance);
-  delay(100);
+  duration = pulseIn(echo_pin, HIGH); //time in microseconds
+  distance = (duration*.0343)/2; //distance in cm 0.0343 is speed of sound in cm per microsecond
+  if(distance < 500) {
+    red_light(Tms, duty, red);
+    Serial.println("occupied");
+  }
+  else {
+    green_light(Tms, duty, green);
+    Serial.println("unoccupied");
+  }
+
   */
-
+ 
+  
   
   /*   
-
-  */
   PIR_val = digitalRead(PIR);
   if(PIR_val == HIGH){ //high on pir pin means motion detected
     red_light(Tms, duty, red);
@@ -60,9 +61,9 @@ void loop() {
   else{
     green_light(Tms, duty, green);
   }
+  
+  */
 
-  
-  
   
 }
 
