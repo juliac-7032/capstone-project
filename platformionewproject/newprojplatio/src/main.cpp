@@ -1,16 +1,91 @@
-#include "state_machine.h"
+#include <Arduino.h>
+#include "light_colours.h"
+#include <iostream>
+#include <chrono> 
+#include <ArduinoJson.h>
 
+//pins
+int red =  6; //name of pin on ESP32
+int green = 7;
+int PIR = 2;
+int echo_pin = 8;
+int trig_pin = 9;
 
-//Some notes I made in fsm.cpp
+//sensor vars
+int PIR_val = 0;
+int echo_val = 0;
+int trig_val;
+float duration, distance; 
 
-//state data: just the light colors file that I already have
-//state machine run - implemented by the setup and loop arduino framework - I think?
+//light -related vars
+double Tms = 1.0; 
+double duty = 0.1;
 
-void setup(){
-
+void setup() {
+  
+  pinMode(red, OUTPUT);
+  pinMode(green, OUTPUT);
+  pinMode(PIR, INPUT); 
+  pinMode(echo_pin, INPUT);
+  pinMode(trig_pin, OUTPUT);
+  Serial.begin(9600);
+  
 }
 
-void loop(){
-  //state_machine_run //might just be able to implement this function in here
+void loop() {
+  
+  /* US testing code
+ digitalWrite(trig_pin, HIGH); //set trig pin high to monitor
+
+  duration = pulseIn(echo_pin, HIGH); //time in microseconds
+  distance = (duration*.0343)/2; //distance in cm 0.0343 is speed of sound in cm per microsecond
+  if(distance < 500) {
+    red_light(Tms, duty, red);
+    Serial.println("occupied");
+  }
+  else {
+    green_light(Tms, duty, green);
+    Serial.println("unoccupied");
+  }
+
+  */
+ 
+  
+  
+  /*   
+  PIR_val = digitalRead(PIR);
+  if(PIR_val == HIGH){ //high on pir pin means motion detected
+    red_light(Tms, duty, red);
+  }
+
+  else{
+    green_light(Tms, duty, green);
+  }
+  
+  */
+
+  
 }
+
+// put function definitions here:
+
+
+//pseudocode
+//read microwave data
+
+
+//1.
+//create json objects to store the data
+//"occupied": yes
+//post json to our API - let software take it from there
+
+//2. (could be at the same time or we could read the json that just got created)
+//if occupied
+//  turn the light red (change red pwm to 100 and the others to 0)
+//else if available
+//  turn the light green (green duty cycle)
+//else if cleaning ****for the cleaning should we do this as a schedule (we take info from the API that it's scheduled for maintenance)?
+//  turn yellow (red 50, green 50)
+
+
 
