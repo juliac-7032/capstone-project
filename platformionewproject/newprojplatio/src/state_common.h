@@ -24,10 +24,7 @@ struct common_state_data
 {
   struct state_machine_data *state_machine_data;
   //I wonder if we need a struct just to hold one pointer, in the video there was a lot more (20:18)
-  //this might be where the json goes
 };
 
-//all of the states can access this function
-void state_machine_post_internal_event(struct state_machine_data *data, event_e event);
 
 #endif

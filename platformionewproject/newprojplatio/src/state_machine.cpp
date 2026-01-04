@@ -1,4 +1,5 @@
 #include "state_machine.h"
+#include "state_common.h"
 #include <cassert>
 
 // Based on video tutorial https://www.youtube.com/watch?v=NTEHRjiAY2I&t=1220s 
@@ -20,7 +21,7 @@ static const struct state_transition state_transitions[] = {
 {STATE_UNOCC, EVENT_MAINT, STATE_MAINT},
 {STATE_OCC, EVENT_UNOCC_DET, STATE_UNOCC},
 {STATE_OCC, EVENT_MAINT, STATE_MAINT},
-{STATE_MAINT, EVENT_ONLINE, STATE_UNOCC}, //"online" meaning detecting occupancy. Brings stall back to unoccupied because that it has just been under maintenance implies that it's unoccupied. 
+{STATE_MAINT, EVENT_ONLINE, STATE_UNOCC}, //"online" meaning "not under maintenance". Brings stall back to unoccupied because that it has just been under maintenance implies that it's unoccupied. 
 };
 
 //state machine data //is this supposed to be in state_common.h?
@@ -31,22 +32,8 @@ struct state_machine_data
   event_e event;
 };
 
-//check if there is an internal event
-static inline int has_internal_event(const struct state_machine_data *data) { //chose int explicit output
-    return data -> internal_event != EVENT_NONE;
-}
 
-static inline event_e take_internal_event(struct state_machine_data *data) { //needs to run in process_input function otherwise complier error
-    assert(has_internal_event(data));
-    const event_e event = data -> internal_event;
-    data -> internal_event = EVENT_NONE;
-    return event;
-}
 
-void state_machine_post_internal_event(struct state_machine_data *data, event_e event) {
-    assert(!has_internal_event(data));
-    data -> internal_event = event; //add event (31:39)
-}
 
 
 //funtion that enters new state
