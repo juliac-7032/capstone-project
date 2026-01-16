@@ -1,96 +1,82 @@
 #include "state_machine.h"
-#include "state_common.h"
+//#include "light_colours.h" //we don't need this right now
 #include <cassert>
+#include "Arduino.h"
 
 // Based on video tutorial https://www.youtube.com/watch?v=NTEHRjiAY2I&t=1220s 
+//https://github.com/artfulbytes/nsumo_video/tree/main/src/app
 
+//light PWM stuff based on random nerd tutorials: https://randomnerdtutorials.com/esp32-pwm-arduino-ide/#analogwrite 
 
-//state transition struct
-struct state_transition
-{
-  state_e from;
-  event_e event;
-  state_e to;
-};
+int red; //pins
+int green;
 
-
-//state transition table (array of the state transition struct type we just made above)
-static const struct state_transition state_transitions[] = {
-//current state, event, new state
-{STATE_UNOCC, EVENT_OCC_DET, STATE_OCC}, 
-{STATE_UNOCC, EVENT_MAINT, STATE_MAINT},
-{STATE_OCC, EVENT_UNOCC_DET, STATE_UNOCC},
-{STATE_OCC, EVENT_MAINT, STATE_MAINT},
-{STATE_MAINT, EVENT_ONLINE, STATE_UNOCC}, //"online" meaning "not under maintenance". Brings stall back to unoccupied because that it has just been under maintenance implies that it's unoccupied. 
-};
-
-//state machine data //is this supposed to be in state_common.h?
-struct state_machine_data
-{
-  state_e state;
-  struct common_state_data state_data;
-  event_e event;
-};
-
-
-
-
+//duty cycle 
+uint8_t duty; //0 to 255
+uint8_t off = 0;
 
 //funtion that enters new state
-static void state_enter(struct state_machine_data *data, state_e from, event_e event, state_e to) {
+static void state_enter(struct state_transition transition) {
     //we will have functions for entering each state
-    switch(to){
+    //Analog writing from here directly would be weird?
+    switch(transition.to){
         case STATE_UNOCC:
-            state_unocc_enter(&(data->unocc), from, event);
+            analogWrite(green, duty);
+            analogWrite(red, off);
             break;
         case STATE_OCC:
-            state_occ_enter(&(data->occ), from, event);
+            analogWrite(red, duty);
+            analogWrite(green, off);
             break;
         case STATE_MAINT:
-            state_maint_enter(&(data->maint), from, event);
+            analogWrite(red, duty);
+            analogWrite(green, duty);
             break;
     }
 }
 
 
 //function that takes an event and goes through the table to find the right transition
-static inline void process_event(struct state_machine_data *data, event_e next_event) {
+void process_event(state_e from, event_e next_event) {
     for (uint16_t i = 0; i<sizeof(state_transitions); i++) { //ARRAY SIZE was a function he made or it's not in cpp TODO: find a function that works
-        if(data -> state == state_transitions[i].from && next_event == state_transitions[i].event) {
-            state_enter(data, state_transitions[i].from, next_event, state_transitions[i].to);
+        if(from == state_transitions[i].from && next_event == state_transitions[i].event) {
+            state_enter(state_transitions[i]);
             return;
         }
     } 
     assert(0);
 }
 
-static inline void process_input(struct state_machine_data *data) {
+event_e process_input() { //input TBD
     //input
     //if statements for input - turn into events to be created
-    //internal events
-    return EVENT_NONE; 
+    event_e event;
+
+    //RETURNS: an event
+    return event;
 }
 
-
-
-static inline void state_machine_init(struct state_machine_data *data) {
-    data -> STATE_UNOCC;  //this needs work and review (26:24)
-    data -> state_machine_data = data;
-    //internal event (I need the none internal event)
+//FIXME: how do pointers work???
+void state_machine_init(struct state_transition *inital_state) { //inital transistion is unocc and event none
+    inital_state -> from = STATE_UNOCC;
+    inital_state -> event = EVENT_NONE;
+    inital_state -> to = STATE_UNOCC;
 }
+
 
 void state_machine_run(void) {
     //allocate and initialize data
-    struct state_machine_data data;
-
-    state_machine_init(&data); 
+    struct state_transition *inital_state;
+    state_machine_init(inital_state); 
 
     while(1) {
-        const event_e event = process_input(&data);
-        process_event(&data, event); //changed from "next_event" - I think he just named the var wrong here
+       
+        
+        process_event(//state transition ); 
     }
 
-
+    //process input needs to return a state transition struct
+    //process event needs to take that struct and do the state change
 
 }
 

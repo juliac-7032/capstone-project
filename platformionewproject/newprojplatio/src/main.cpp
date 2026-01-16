@@ -8,7 +8,7 @@
 int red =  6; //name of pin on ESP32
 int green = 7;
 int PIR = 2;
-int echo_pin = 8;
+int echo_pin = 8; 
 int trig_pin = 9;
 
 //sensor vars
