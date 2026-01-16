@@ -1,14 +1,10 @@
 #include <Arduino.h>
-#include <Adafruit_NeoPixel.h>
 
+int RED = 6;
+int GREEN = 7;
 
-
-
-#define PIN        8 //builtin LED pin
-#define NUMPIXELS 16
-Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-#define DELAYVAL 20
-
+double Tms = 1.0; 
+double duty = 0.1;
 
 // put function declarations here:
 
@@ -17,97 +13,21 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 void setup() {
   // put your setup code here, to run once:
-
-
-  pixels.begin();
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  Serial.begin(9600);
+  
 }
 
 
 void loop() {
   // put your main code here, to run repeatedly:
-  pixels.clear();
-
-
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(150, 0, 0));
-    pixels.show();
-    delay(DELAYVAL);
-  }
- 
-    for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(100, 50, 0));
-    pixels.show();
-    delay(DELAYVAL);
-  }
- 
-
-
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(75, 75, 0));
-    pixels.show();
-    delay(DELAYVAL);
-  }
- 
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(50, 100, 0));
-    pixels.show();
-    delay(DELAYVAL);
-  }
-
-
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 150, 0));
-    pixels.show();
-    delay(DELAYVAL);
-  }
- 
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 100, 50));
-    pixels.show();
-    delay(DELAYVAL);
-  }
-
-
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 75, 75));
-    pixels.show();
-    delay(DELAYVAL);
-  }
- 
-    for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 50, 100));
-    pixels.show();
-    delay(DELAYVAL);
-  }
-
-
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 150));
-    pixels.show();
-   
-  }
- 
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(50, 0, 100));
-    pixels.show();
-    delay(DELAYVAL);
-  }
-
-
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(75, 0, 75));
-    pixels.show();
-    delay(DELAYVAL);
-  }
-
-
-    for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(100, 0, 50));
-    pixels.show();
-    delay(DELAYVAL);
-  }
- 
- 
+ digitalWrite(RED, HIGH);
+ digitalWrite(GREEN, HIGH);
+ delay(Tms*duty);
+ digitalWrite(RED, LOW);
+ digitalWrite(GREEN, HIGH);
+ delay(1.0 - (Tms*duty));
 }
 
 
