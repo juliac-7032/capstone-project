@@ -5,11 +5,13 @@
 #include <ArduinoJson.h>
 
 //pins
-int red =  6; //name of pin on ESP32
+int red =  6; //name of pin on ESP32 (silkscreen and GPIO number)
 int green = 7;
-int PIR = 2;
-int echo_pin = 8; 
-int trig_pin = 9;
+int PIR_pin = 10; 
+int echo_pin = 1; 
+int trig_pin = 3;
+bool US;
+bool PIR;
 
 //sensor vars
 int PIR_val = 0;
@@ -25,7 +27,7 @@ void setup() {
   
   pinMode(red, OUTPUT);
   pinMode(green, OUTPUT);
-  pinMode(PIR, INPUT); 
+  pinMode(PIR_pin, INPUT); 
   pinMode(echo_pin, INPUT);
   pinMode(trig_pin, OUTPUT);
   Serial.begin(9600);
@@ -35,35 +37,52 @@ void setup() {
 void loop() {
   
   /* US testing code
- digitalWrite(trig_pin, HIGH); //set trig pin high to monitor
+  //for right now, I am going to define a distance of less than 40cm as "occupied" so that we can easily test it on my desk with the measuring tape
+ 
+  */
+
+  digitalWrite(trig_pin, LOW);  
+	delayMicroseconds(2);  
+	digitalWrite(trig_pin, HIGH);  
+	delayMicroseconds(10);  
+	digitalWrite(trig_pin, LOW);  
 
   duration = pulseIn(echo_pin, HIGH); //time in microseconds
   distance = (duration*.0343)/2; //distance in cm 0.0343 is speed of sound in cm per microsecond
-  if(distance < 500) {
-    red_light(Tms, duty, red);
-    Serial.println("occupied");
+  if(distance < 40){
+    US = true;
+    Serial.println("US: occupied");
   }
-  else {
-    green_light(Tms, duty, green);
-    Serial.println("unoccupied");
+  else{
+    Serial.println("US: unoccupied");
+    US = false;
   }
-
-  */
- 
-  
   
   /*   
-  PIR_val = digitalRead(PIR);
-  if(PIR_val == HIGH){ //high on pir pin means motion detected
-    red_light(Tms, duty, red);
-  }
-
-  else{
-    green_light(Tms, duty, green);
-  }
-  
+ 
   */
 
+ PIR_val = digitalRead(PIR_pin);
+  if(PIR_val == HIGH){ //high on pir pin means motion detected
+    Serial.println("PIR: occupied");
+    PIR = true; 
+  }
+  else{
+    Serial.println("PIR: unoccupied");
+    PIR = false; 
+  }
+
+//logic
+if(PIR)
+    Serial.println("occupied");
+  else
+    if(US)
+      Serial.println("occupied");
+    else
+      Serial.println("unoccupied");
+
+  delay(1000);
+  
   
 }
 

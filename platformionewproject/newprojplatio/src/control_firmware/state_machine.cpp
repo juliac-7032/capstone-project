@@ -3,6 +3,8 @@
 #include <cassert>
 #include "Arduino.h"
 
+//testing with unity https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/unit-tests.html 
+
 // Based on video tutorial https://www.youtube.com/watch?v=NTEHRjiAY2I&t=1220s 
 //https://github.com/artfulbytes/nsumo_video/tree/main/src/app
 
