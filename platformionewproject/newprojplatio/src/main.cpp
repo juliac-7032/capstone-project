@@ -7,63 +7,38 @@
 //pins
 int red =  6; //name of pin on ESP32
 int green = 7;
-int PIR = 2;
-int echo_pin = 8;
-int trig_pin = 9;
+
 
 //sensor vars
-int PIR_val = 0;
-int echo_val = 0;
-int trig_val;
-float duration, distance; 
+
+
+int add(int val1, int val2){
+  return val1+val2;
+}
 
 //light -related vars
 double Tms = 1.0; 
 double duty = 0.1;
 
 void setup() {
-  
   pinMode(red, OUTPUT);
   pinMode(green, OUTPUT);
-  pinMode(PIR, INPUT); 
-  pinMode(echo_pin, INPUT);
-  pinMode(trig_pin, OUTPUT);
   Serial.begin(9600);
-  
+
 }
 
 void loop() {
   
-  /* US testing code
- digitalWrite(trig_pin, HIGH); //set trig pin high to monitor
+  analogWrite(red, 255);
+  delay(10000);
 
-  duration = pulseIn(echo_pin, HIGH); //time in microseconds
-  distance = (duration*.0343)/2; //distance in cm 0.0343 is speed of sound in cm per microsecond
-  if(distance < 500) {
-    red_light(Tms, duty, red);
-    Serial.println("occupied");
+  int value_2 = 5;
+  int value_1 = 10;
+  while(1){
+    Serial.println(add(value_2, value_1));
   }
-  else {
-    green_light(Tms, duty, green);
-    Serial.println("unoccupied");
-  }
-
-  */
+  
  
-  
-  
-  /*   
-  PIR_val = digitalRead(PIR);
-  if(PIR_val == HIGH){ //high on pir pin means motion detected
-    red_light(Tms, duty, red);
-  }
-
-  else{
-    green_light(Tms, duty, green);
-  }
-  
-  */
-
   
 }
 
@@ -71,8 +46,6 @@ void loop() {
 
 
 //pseudocode
-//read microwave data
-
 
 //1.
 //create json objects to store the data
