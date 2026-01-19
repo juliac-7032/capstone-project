@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "light_colours.h"
 #include <iostream>
-#include <chrono> 
 #include <ArduinoJson.h>
 
 //pins
@@ -23,6 +22,10 @@ float duration, distance;
 double Tms = 1.0; 
 double duty = 0.1;
 
+
+
+
+
 void setup() {
   
   pinMode(red, OUTPUT);
@@ -31,15 +34,14 @@ void setup() {
   pinMode(echo_pin, INPUT);
   pinMode(trig_pin, OUTPUT);
   Serial.begin(9600);
+ 
   
 }
 
 void loop() {
   
-  /* US testing code
+  // US testing code
   //for right now, I am going to define a distance of less than 40cm as "occupied" so that we can easily test it on my desk with the measuring tape
- 
-  */
 
   digitalWrite(trig_pin, LOW);  
 	delayMicroseconds(2);  
@@ -57,10 +59,6 @@ void loop() {
     Serial.println("US: unoccupied");
     US = false;
   }
-  
-  /*   
- 
-  */
 
  PIR_val = digitalRead(PIR_pin);
   if(PIR_val == HIGH){ //high on pir pin means motion detected
@@ -84,13 +82,14 @@ if(PIR)
   delay(1000);
   
   
+  //instead of serial prints, put results into a json document
+
 }
 
 // put function definitions here:
 
 
 //pseudocode
-//read microwave data
 
 
 //1.
