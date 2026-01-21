@@ -40,8 +40,12 @@ void setup() {
 
 void loop() {
   
+ 
   // US testing code
-  //for right now, I am going to define a distance of less than 40cm as "occupied" so that we can easily test it on my desk with the measuring tape
+  
+
+  JsonDocument sensor_data;
+  sensor_data["id"] = "001";
 
   digitalWrite(trig_pin, LOW);  
 	delayMicroseconds(2);  
@@ -51,38 +55,48 @@ void loop() {
 
   duration = pulseIn(echo_pin, HIGH); //time in microseconds
   distance = (duration*.0343)/2; //distance in cm 0.0343 is speed of sound in cm per microsecond
-  if(distance < 40){
+  if(distance < 800){
     US = true;
-    Serial.println("US: occupied");
+    
+    sensor_data["US"] = "occupied";
   }
   else{
-    Serial.println("US: unoccupied");
+    
+    sensor_data["US"] = "unoccupied";
     US = false;
   }
 
  PIR_val = digitalRead(PIR_pin);
   if(PIR_val == HIGH){ //high on pir pin means motion detected
-    Serial.println("PIR: occupied");
+    sensor_data["PIR"] = "occupied";
     PIR = true; 
   }
   else{
-    Serial.println("PIR: unoccupied");
+    sensor_data["PIR"] = "unoccupied";
     PIR = false; 
   }
 
 //logic
 if(PIR)
-    Serial.println("occupied");
+    
+    sensor_data["overall"] = "occupied";
   else
     if(US)
-      Serial.println("occupied");
+      
+      sensor_data["overall"] = "occupied";
     else
-      Serial.println("unoccupied");
+      
+      sensor_data["overall"] = "unoccupied";
 
-  delay(1000);
-  
   
   //instead of serial prints, put results into a json document
+  
+  
+  
+  serializeJson(sensor_data, Serial); //final serial print
+  Serial.println(" ");
+
+  delay(1000);
 
 }
 

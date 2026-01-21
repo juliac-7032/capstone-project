@@ -39,7 +39,11 @@ static void state_enter(struct state_transition transition) {
 
 
 //function that takes an event and goes through the table to find the right transition
-void process_event(state_e from, event_e next_event) {
+void process_event(struct state_transition transition) {
+    
+    state_e from = transition.from; 
+    event_e next_event = transition.event; 
+
     for (uint16_t i = 0; i<sizeof(state_transitions); i++) { //ARRAY SIZE was a function he made or it's not in cpp TODO: find a function that works
         if(from == state_transitions[i].from && next_event == state_transitions[i].event) {
             state_enter(state_transitions[i]);
@@ -49,13 +53,17 @@ void process_event(state_e from, event_e next_event) {
     assert(0);
 }
 
-event_e process_input() { //input TBD
+struct state_transition process_input() { //input is a json document
     //input
     //if statements for input - turn into events to be created
-    event_e event;
+    struct state_transition new_transistion;
+    //deserialize the json document
+    //assign the event, to, and from varibles in new_transition
+    new_transition.event = //
 
-    //RETURNS: an event
-    return event;
+
+    //RETURNS: a state transition
+    return new_transistion;
 }
 
 //FIXME: how do pointers work???
@@ -77,8 +85,6 @@ void state_machine_run(void) {
         process_event(//state transition ); 
     }
 
-    //process input needs to return a state transition struct
-    //process event needs to take that struct and do the state change
 
 }
 
