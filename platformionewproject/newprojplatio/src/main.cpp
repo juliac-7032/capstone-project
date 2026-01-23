@@ -2,6 +2,7 @@
 #include "light_colours.h"
 #include <iostream>
 #include <ArduinoJson.h>
+#include "sensors.h"
 
 //pins
 int red =  6; //name of pin on ESP32 (silkscreen and GPIO number)
@@ -39,11 +40,7 @@ void setup() {
 }
 
 void loop() {
-  
- 
-  // US testing code
-  
-
+  /*
   JsonDocument sensor_data;
   sensor_data["id"] = "001";
 
@@ -87,14 +84,14 @@ if(PIR)
     else
       
       sensor_data["overall"] = "unoccupied";
-
-  
-  //instead of serial prints, put results into a json document
-  
-  
   
   serializeJson(sensor_data, Serial); //final serial print
   Serial.println(" ");
+
+  */
+ 
+
+  get_sensor_data();
 
   delay(1000);
 
