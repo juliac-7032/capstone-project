@@ -52,14 +52,14 @@ if(_PIR)
     _sensor_data["overall"] = "occupied";
   else
     /*
-    if(_US)
-      
+    
+    */
+   if(_US) 
       _sensor_data["overall"] = "occupied";
     else
-      
       _sensor_data["overall"] = "unoccupied";
-    */
-    _sensor_data["overall"] = "unoccupied";
+
+    
     
   
   return _sensor_data;

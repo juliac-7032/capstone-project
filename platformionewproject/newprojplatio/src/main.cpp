@@ -30,6 +30,7 @@ float duration, distance;
 
 //ctrl vars
 state_e curr;
+state_e curr1;
 
 // FUNCTIONS:
 
@@ -41,9 +42,10 @@ struct state_transition state_machine_init() { //inital transistion is unocc and
 }
 
 //funtion that enters new state
+//commented out because I put the switch statement in the process_input function
+
+/*
 static void state_enter(state_e to) {
-    //we will have functions for entering each state
-    //Analog writing from here directly would be weird?
     switch(to){
         case STATE_UNOCC:
             analogWrite(green, duty);
@@ -63,6 +65,8 @@ static void state_enter(state_e to) {
     }
     return;
 }
+*/
+
 
 state_e process_input(JsonDocument data, state_e current_state) { //input is a json document
   /*
@@ -71,7 +75,6 @@ state_e process_input(JsonDocument data, state_e current_state) { //input is a j
   
   serializeJson(data, Serial);
   
-
   state_e new_state; 
   if(data["overall"] == "occupied"){
     new_state = STATE_OCC;
@@ -83,7 +86,7 @@ state_e process_input(JsonDocument data, state_e current_state) { //input is a j
     Serial.print("unoccupied ");
     Serial.println(new_state);
   }
-  else if(data["overall"] == "maintenance"){
+  else{
     new_state = STATE_MAINT;
     Serial.print("maintenance ");
     Serial.println(new_state);
@@ -93,18 +96,33 @@ state_e process_input(JsonDocument data, state_e current_state) { //input is a j
   
   if(new_state != current_state){
     Serial.println("entering new state");
-    state_enter(new_state);
-    return(new_state);
+    switch(new_state){
+      case STATE_UNOCC:
+        analogWrite(green, duty);
+        analogWrite(red, off);
+        Serial.println("green");
+        break;
+      case STATE_OCC:
+        analogWrite(red, duty);
+        analogWrite(green, off);
+        Serial.println("red");
+        break;
+      case STATE_MAINT:
+        analogWrite(red, duty);
+        analogWrite(green, duty);
+        Serial.println("yellow");
+        break;
+    }
+
+    return new_state;
   }
-  else 
+  else {
     Serial.println("the state is the same");
     return current_state;
+  }
+    
   
-
-
 }
-
-
 
 
 void setup() {
@@ -125,8 +143,15 @@ void setup() {
 
 void loop() {
   
+/*
+  
+*/
 
-  curr = process_input(get_sensor_data(), curr);
+  JsonDocument data;
+  data = get_sensor_data();
+  //curr = process_input(get_sensor_data(),  curr);
+  serializeJson(data, Serial);
+  Serial.println("");
   
   delay(1000);
 
