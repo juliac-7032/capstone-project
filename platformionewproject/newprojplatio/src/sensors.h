@@ -1,3 +1,3 @@
+#include <ArduinoJson.h>
 
-
-void get_sensor_data();
+JsonDocument get_sensor_data();

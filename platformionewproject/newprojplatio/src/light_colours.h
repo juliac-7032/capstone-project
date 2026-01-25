@@ -1,6 +1,4 @@
-#ifndef LIGHT_COLOURS.H
 
-#define LIGHT_COLOURS.H
 
 void yellow_light(double Tms, double duty, int red, int green);
 
@@ -11,4 +9,4 @@ void red_light(double Tms, double duty, int red);
 
 //TODO data structs for the state data to pass into the enter functions
 
-#endif
+

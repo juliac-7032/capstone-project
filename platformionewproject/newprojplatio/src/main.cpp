@@ -3,15 +3,24 @@
 #include <iostream>
 #include <ArduinoJson.h>
 #include "sensors.h"
+#include <string>
+#include "control_firmware\state_machine.h"
+using namespace std;
+
+//TODO put all the functions in a header so that we don't have to mess around with the order of everything
 
 //pins
-int red =  6; //name of pin on ESP32 (silkscreen and GPIO number)
-int green = 7;
-int PIR_pin = 10; 
+int PIR_pin = 10; //name of pin on ESP32 (silkscreen and GPIO number)
 int echo_pin = 1; 
 int trig_pin = 3;
 bool US;
 bool PIR;
+int red; //pins
+int green;
+
+//duty cycle 
+uint8_t duty; //0 to 255
+uint8_t off = 0;
 
 //sensor vars
 int PIR_val = 0;
@@ -19,90 +28,115 @@ int echo_val = 0;
 int trig_val;
 float duration, distance; 
 
-//light -related vars
-double Tms = 1.0; 
-double duty = 0.1;
+//ctrl vars
+state_e curr;
 
+// FUNCTIONS:
+
+struct state_transition state_machine_init() { //inital transistion is unocc and event none
+    struct state_transition initial_state;
+    initial_state.from = STATE_UNOCC;
+    initial_state.to = STATE_UNOCC;
+    return initial_state;
+}
+
+//funtion that enters new state
+static void state_enter(state_e to) {
+    //we will have functions for entering each state
+    //Analog writing from here directly would be weird?
+    switch(to){
+        case STATE_UNOCC:
+            analogWrite(green, duty);
+            analogWrite(red, off);
+            Serial.println("green");
+            break;
+        case STATE_OCC:
+            analogWrite(red, duty);
+            analogWrite(green, off);
+            Serial.println("red");
+            break;
+        case STATE_MAINT:
+            analogWrite(red, duty);
+            analogWrite(green, duty);
+            Serial.println("yellow");
+            break;
+    }
+    return;
+}
+
+state_e process_input(JsonDocument data, state_e current_state) { //input is a json document
+  /*
+ 
+  */
+  
+  serializeJson(data, Serial);
+  
+
+  state_e new_state; 
+  if(data["overall"] == "occupied"){
+    new_state = STATE_OCC;
+    Serial.print("occupied ");
+    Serial.println(new_state);
+  } 
+  else if(data["overall"] == "unoccupied"){
+    new_state = STATE_UNOCC;
+    Serial.print("unoccupied ");
+    Serial.println(new_state);
+  }
+  else if(data["overall"] == "maintenance"){
+    new_state = STATE_MAINT;
+    Serial.print("maintenance ");
+    Serial.println(new_state);
+  }
+    
+  //FIXME should probably have an else where we return an error
+  
+  if(new_state != current_state){
+    Serial.println("entering new state");
+    state_enter(new_state);
+    return(new_state);
+  }
+  else 
+    Serial.println("the state is the same");
+    return current_state;
+  
+
+
+}
 
 
 
 
 void setup() {
   
-  pinMode(red, OUTPUT);
-  pinMode(green, OUTPUT);
   pinMode(PIR_pin, INPUT); 
   pinMode(echo_pin, INPUT);
   pinMode(trig_pin, OUTPUT);
   Serial.begin(9600);
- 
-  
+  struct state_transition initial_state = state_machine_init();
+  Serial.print("initial state: ");
+  Serial.println(initial_state.to);
+  curr = process_input(get_sensor_data(), initial_state.to);
+  Serial.print("curr: ");
+  Serial.println(initial_state.to);
+  Serial.println("setup successful");
+
 }
 
 void loop() {
-  /*
-  JsonDocument sensor_data;
-  sensor_data["id"] = "001";
-
-  digitalWrite(trig_pin, LOW);  
-	delayMicroseconds(2);  
-	digitalWrite(trig_pin, HIGH);  
-	delayMicroseconds(10);  
-	digitalWrite(trig_pin, LOW);  
-
-  duration = pulseIn(echo_pin, HIGH); //time in microseconds
-  distance = (duration*.0343)/2; //distance in cm 0.0343 is speed of sound in cm per microsecond
-  if(distance < 800){
-    US = true;
-    
-    sensor_data["US"] = "occupied";
-  }
-  else{
-    
-    sensor_data["US"] = "unoccupied";
-    US = false;
-  }
-
- PIR_val = digitalRead(PIR_pin);
-  if(PIR_val == HIGH){ //high on pir pin means motion detected
-    sensor_data["PIR"] = "occupied";
-    PIR = true; 
-  }
-  else{
-    sensor_data["PIR"] = "unoccupied";
-    PIR = false; 
-  }
-
-//logic
-if(PIR)
-    
-    sensor_data["overall"] = "occupied";
-  else
-    if(US)
-      
-      sensor_data["overall"] = "occupied";
-    else
-      
-      sensor_data["overall"] = "unoccupied";
   
-  serializeJson(sensor_data, Serial); //final serial print
-  Serial.println(" ");
 
-  */
- 
-
-  get_sensor_data();
-
+  curr = process_input(get_sensor_data(), curr);
+  
   delay(1000);
 
 }
 
-// put function definitions here:
+
+
 
 
 //pseudocode
-
-
 //1.
 //create json objects to store the data
 //"occupied": yes

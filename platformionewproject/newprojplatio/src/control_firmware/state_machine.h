@@ -12,6 +12,7 @@ typedef enum {
   STATE_MAINT
 } state_e; //enumerate states, then give then the type state_e
 
+/*
 
 typedef enum{
   EVENT_OCC_DET,
@@ -21,16 +22,20 @@ typedef enum{
   EVENT_NONE
 } event_e; 
 
+*/
+
+
 
 //state transition struct
 struct state_transition
 {
   state_e from;
-  event_e event;
+  //event_e event;
   state_e to;
 };
 
 
+/* 
 //state transition table (array of the state transition struct type we just made above)
 static const struct state_transition state_transitions[] = {
 //current state, event, new state
@@ -44,11 +49,13 @@ static const struct state_transition state_transitions[] = {
 {STATE_OCC, EVENT_NONE, STATE_OCC},
 {STATE_MAINT, EVENT_NONE, STATE_MAINT}
 };
+*/
+
 
 
 // FUNCTIONS
 
-void state_machine_run(void); //starts state machine
+//void state_machine_run(void); //starts state machine
 
 
 #endif

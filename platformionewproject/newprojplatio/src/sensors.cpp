@@ -13,8 +13,9 @@ int _echo_val = 0;
 int _trig_val;
 float _duration, _distance; 
 
-void get_sensor_data() {
-JsonDocument _sensor_data;
+JsonDocument get_sensor_data() {
+  JsonDocument _sensor_data;
+
   _sensor_data["id"] = "001";
 
   digitalWrite(_trig_pin, LOW);  
@@ -50,14 +51,17 @@ JsonDocument _sensor_data;
 if(_PIR)
     _sensor_data["overall"] = "occupied";
   else
+    /*
     if(_US)
       
       _sensor_data["overall"] = "occupied";
     else
       
       _sensor_data["overall"] = "unoccupied";
+    */
+    _sensor_data["overall"] = "unoccupied";
+    
   
-  serializeJson(_sensor_data, Serial); //final serial print
-  Serial.println(" ");
+  return _sensor_data;
 }
  
