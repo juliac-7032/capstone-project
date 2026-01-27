@@ -75,20 +75,21 @@ state_e process_input(JsonDocument data, state_e current_state) { //input is a j
   
   serializeJson(data, Serial);
   
+  //0 = unocc, 1 = occ, 2 = maint
   state_e new_state; 
   if(data["overall"] == "occupied"){
     new_state = STATE_OCC;
-    Serial.print("occupied ");
+    Serial.print("Read from sensor ");
     Serial.println(new_state);
   } 
   else if(data["overall"] == "unoccupied"){
     new_state = STATE_UNOCC;
-    Serial.print("unoccupied ");
+    Serial.print("Read from sensor ");
     Serial.println(new_state);
   }
   else{
     new_state = STATE_MAINT;
-    Serial.print("maintenance ");
+    Serial.print("Read from sensor ");
     Serial.println(new_state);
   }
     
@@ -124,19 +125,21 @@ state_e process_input(JsonDocument data, state_e current_state) { //input is a j
   
 }
 
-
 void setup() {
+
+  init_sensors(PIR_pin, echo_pin, trig_pin);
   
-  pinMode(PIR_pin, INPUT); 
-  pinMode(echo_pin, INPUT);
-  pinMode(trig_pin, OUTPUT);
+  
   Serial.begin(9600);
-  struct state_transition initial_state = state_machine_init();
+  struct state_transition initial_state = state_machine_init(); //getting initial state
   Serial.print("initial state: ");
   Serial.println(initial_state.to);
-  curr = process_input(get_sensor_data(), initial_state.to);
-  Serial.print("curr: ");
-  Serial.println(initial_state.to);
+
+
+
+  curr = process_input(get_sensor_data(), initial_state.to); //initializing the curr var - remembers the state it's in when data is read
+  Serial.print("first sensor read: ");
+  Serial.println(curr);
   Serial.println("setup successful");
 
 }
@@ -147,13 +150,15 @@ void loop() {
   
 */
 
-  JsonDocument data;
-  data = get_sensor_data();
-  //curr = process_input(get_sensor_data(),  curr);
-  serializeJson(data, Serial);
+  //JsonDocument data;
+  //data = get_sensor_data();
+  curr = process_input(get_sensor_data(),  curr); //get_sensor data will not be the arg here - it will process input from ethernet
+  //serializeJson(data, Serial);
   Serial.println("");
+	
+ 
   
-  delay(1000);
+  delay(1000); 
 
 }
 

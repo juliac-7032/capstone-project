@@ -1,17 +1,35 @@
 #include <ArduinoJson.h>
 #include <Arduino.h>
 
+
+
+
 int _PIR_pin; 
 int _echo_pin; 
 int _trig_pin;
 bool _US;
 bool _PIR;
 
+
 //sensor vars
 int _PIR_val = 0;
 int _echo_val = 0;
 int _trig_val;
 float _duration, _distance; 
+
+
+
+void init_sensors(int PIR_arg, int echo_arg, int trig_arg) {
+  _PIR_pin = PIR_arg;
+  _echo_pin = echo_arg;
+  _trig_pin = trig_arg;
+  
+  pinMode(_PIR_pin, INPUT);
+  pinMode(_echo_pin, INPUT);
+  pinMode(_trig_pin, OUTPUT);
+}
+
+
 
 JsonDocument get_sensor_data() {
   JsonDocument _sensor_data;
