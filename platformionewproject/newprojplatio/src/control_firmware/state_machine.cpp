@@ -1,4 +1,4 @@
-#include "state_machine.h"
+/*#include "state_machine.h"
 //#include "light_colours.h" //we don't need this right now
 #include <cassert>
 #include "Arduino.h"
@@ -89,5 +89,5 @@ void state_machine_run(void) {
     }
 
 
-}
+}*/
 

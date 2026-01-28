@@ -1,4 +1,4 @@
-#ifndef STATE_MACHINE.H
+/*#ifndef STATE_MACHINE.H
 #define STATE_MACHINE.H
 
 #include <stdint.h> //idk why I need this, it was in state_common originally
@@ -22,7 +22,7 @@ typedef enum{
   EVENT_NONE
 } event_e; 
 
-*/
+
 
 
 
@@ -55,7 +55,6 @@ static const struct state_transition state_transitions[] = {
 
 // FUNCTIONS
 
-//void state_machine_run(void); //starts state machine
+//void state_machine_run(void); //starts state machine*/
 
 
-#endif
