@@ -35,6 +35,20 @@ static byte mac[] = { 0x02, 0x12, 0x34, 0x56, 0x78, 0x9A };
 // State machine
 static state_e g_state = STATE_UNOCC;
 
+// ---------- Ethernet status ----------
+static bool g_ethOk = false;              // "network usable"
+static bool g_linkOn = false;             // cable/link state
+static unsigned long g_lastEthRetryMs = 0;
+static const unsigned long ETH_RETRY_MS = 5000; // retry Ethernet every 5s if failed
+
+// ---------- JSON publish cache ----------
+static String g_lastJson = "{}";
+static unsigned long g_lastPublishMs = 0;
+
+// JSON rates
+static const unsigned long JSON_PERIOD_OK_MS   = 1000; // 1s when Ethernet is OK
+static const unsigned long JSON_PERIOD_FAIL_MS = 200;  // 200ms when Ethernet fails (change as you want)
+
 // ------------------------------------------------------
 // EthernetServer shim (fixes ESP32 abstract Server issue)
 // ------------------------------------------------------
@@ -115,13 +129,8 @@ static void handle_client() {
     send_http(client, "text/html; charset=utf-8", index_html());
   }
   else if (path == "/data") {
-    JsonDocument doc;
-    get_sensor_data(doc);
-    g_state = state_machine_step(doc, g_state);
-
-    String json;
-    serializeJson(doc, json);
-    send_http(client, "application/json", json);
+    // Return the most recent JSON snapshot
+    send_http(client, "application/json", g_lastJson);
   }
   else {
     send_404(client);
@@ -131,7 +140,52 @@ static void handle_client() {
   client.stop();
 }
 
-// -------------------- ETHERNET INIT --------------------
+// -------------------- ETHERNET INIT / RETRY ------------
+static void ethernet_try_begin() {
+  // Update link status
+  g_linkOn = (Ethernet.linkStatus() == LinkON);
+
+  // If no link, we consider Ethernet not OK
+  if (!g_linkOn) {
+    g_ethOk = false;
+    return;
+  }
+
+  // Link is on: try DHCP first, fallback to static
+  Serial.println("Starting Ethernet DHCP...");
+  if (Ethernet.begin(mac) == 0) {
+    Serial.println("DHCP failed — using static IP");
+    IPAddress ip(192, 168, 1, 50);
+    IPAddress dns(192, 168, 1, 1);
+    IPAddress gw(192, 168, 1, 1);
+    IPAddress mask(255, 255, 255, 0);
+    Ethernet.begin(mac, ip, dns, gw, mask);
+  }
+
+  IPAddress ip = Ethernet.localIP();
+  g_ethOk = (ip[0] != 0); // crude but effective: 0.0.0.0 means no IP
+
+  Serial.print("IP: ");
+  Serial.println(ip);
+
+  Serial.print("Link: ");
+  Serial.println(g_linkOn ? "ON" : "OFF");
+
+  if (g_ethOk) {
+    server.begin();
+    Serial.println("================================");
+    Serial.print("Web:   http://");
+    Serial.print(ip);
+    Serial.println("/");
+    Serial.print("JSON:  http://");
+    Serial.print(ip);
+    Serial.println("/data");
+    Serial.println("================================");
+  } else {
+    Serial.println("Ethernet not OK (no valid IP).");
+  }
+}
+
 static void ethernet_begin() {
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, W5500_CS);
   Ethernet.init(W5500_CS);
@@ -144,34 +198,44 @@ static void ethernet_begin() {
     delay(200);
   }
 
-  Serial.println("Starting Ethernet DHCP...");
-  if (Ethernet.begin(mac) == 0) {
-    Serial.println("DHCP failed — using static IP");
-    IPAddress ip(192, 168, 1, 50);
-    IPAddress dns(192, 168, 1, 1);
-    IPAddress gw(192, 168, 1, 1);
-    IPAddress mask(255, 255, 255, 0);
-    Ethernet.begin(mac, ip, dns, gw, mask);
-  }
+  // Try immediately
+  ethernet_try_begin();
+  g_lastEthRetryMs = millis();
+}
 
-  Serial.print("IP: ");
-  Serial.println(Ethernet.localIP());
+// Retry Ethernet in the background if it failed
+static void ethernet_retry_if_needed() {
+  const unsigned long now = millis();
+  if (g_ethOk) return;
+  if (now - g_lastEthRetryMs < ETH_RETRY_MS) return;
+  g_lastEthRetryMs = now;
 
-  Serial.print("Link: ");
-  Serial.println(Ethernet.linkStatus() == LinkON ? "ON" : "OFF");
+  Serial.println("Ethernet retry...");
+  ethernet_try_begin();
+}
 
-  server.begin();
+// -------------------- JSON PUBLISH ---------------------
+static void publish_json_periodic() {
+  const unsigned long now = millis();
+  const unsigned long period = g_ethOk ? JSON_PERIOD_OK_MS : JSON_PERIOD_FAIL_MS;
 
-  IPAddress ip = Ethernet.localIP();
-  Serial.println("================================");
-  Serial.print("Web:   http://");
-  Serial.print(ip);
-  Serial.println("/");
+  if (now - g_lastPublishMs < period) return;
+  g_lastPublishMs = now;
 
-  Serial.print("JSON:  http://");
-  Serial.print(ip);
-  Serial.println("/data");
-  Serial.println("================================");
+  JsonDocument doc;
+  get_sensor_data(doc);
+
+  // Add Ethernet status into the JSON payload
+  doc["eth_link"] = g_linkOn ? "on" : "off";
+  doc["eth_ok"]   = g_ethOk ? "yes" : "no";
+
+  g_state = state_machine_step(doc, g_state);
+
+  g_lastJson = "";
+  serializeJson(doc, g_lastJson);
+
+  // Always print to Serial; prints faster when Ethernet fails
+  Serial.println(g_lastJson);
 }
 
 // -------------------- SETUP / LOOP ---------------------
@@ -182,10 +246,20 @@ void setup() {
   sensors_init(PIR_PIN, ECHO_PIN, TRIG_PIN);
   state_machine_init(RED_PIN, GREEN_PIN, 255);
 
+  // Force immediate JSON print at boot (even if Ethernet init blocks later)
+  g_lastPublishMs = millis() - JSON_PERIOD_FAIL_MS;
+  publish_json_periodic();
+
   ethernet_begin();
 }
 
 void loop() {
-  handle_client();
-  Ethernet.maintain();
+  publish_json_periodic();       // always prints; faster when Ethernet is down
+  ethernet_retry_if_needed();    // tries to recover Ethernet automatically
+
+  // Only bother serving clients if Ethernet is actually up
+  if (g_ethOk) {
+    handle_client();
+    Ethernet.maintain();
+  }
 }
