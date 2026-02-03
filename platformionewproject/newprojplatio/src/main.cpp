@@ -1,24 +1,13 @@
 #include <Arduino.h>
-#include "light_colours.h"
+//#include "light_colours.h"
 #include <iostream>
 #include <chrono> 
 #include <ArduinoJson.h>
 
 //pins
-int red =  6; //name of pin on ESP32
-int green = 7;
+int red =  8; //name of pin on ESP32
+int green = 9;
 
-
-//sensor vars
-
-
-int add(int val1, int val2){
-  return val1+val2;
-}
-
-//light -related vars
-double Tms = 1.0; 
-double duty = 0.1;
 
 void setup() {
   pinMode(red, OUTPUT);
@@ -28,17 +17,17 @@ void setup() {
 }
 
 void loop() {
-  
-  analogWrite(red, 255);
-  delay(10000);
 
-  int value_2 = 5;
-  int value_1 = 10;
-  while(1){
-    Serial.println(add(value_2, value_1));
-  }
   
- 
+  
+  digitalWrite(red, HIGH);
+  Serial.println("high");
+  delay(1000);
+  digitalWrite(red, LOW);
+  Serial.println("low");
+  delay(1000);
+
+  
   
 }
 
