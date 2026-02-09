@@ -1,5 +1,9 @@
+#ifndef SENSORS_H
+#define SENSORS_H
+
 #include <ArduinoJson.h>
 
-JsonDocument get_sensor_data();
+void sensors_init(int pir_pin, int echo_pin, int trig_pin);
+void get_sensor_data(JsonDocument& doc);
 
-void init_sensors(int PIR_arg, int echo_arg, int trig_arg);
+#endif
