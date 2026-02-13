@@ -59,4 +59,5 @@ void get_sensor_data(JsonDocument& doc) {
 
   // Overall = PIR OR US
   doc["overall"] = (pir || us) ? "occupied" : "unoccupied";
+
 }
