@@ -8,8 +8,6 @@
 #include "state_machine.h"
 
 // ===================== PIN CONFIG =====================
-// CHANGE THESE TO MATCH YOUR WIRING
-
 // W5500
 static const int W5500_CS  = 7;     // Chip Select
 static const int W5500_RST = -1;    // Reset pin, or -1 if not wired
@@ -24,7 +22,7 @@ static const int PIR_PIN  = 10;
 static const int TRIG_PIN = 3;
 static const int ECHO_PIN = 1;
 
-// LEDs (safe even if not connected)
+// LEDs
 static const int RED_PIN   = 8;
 static const int GREEN_PIN = 9;
 // ======================================================
@@ -36,18 +34,24 @@ static byte mac[] = { 0x02, 0x12, 0x34, 0x56, 0x78, 0x9A };
 static state_e g_state = STATE_UNOCC;
 
 // ---------- Ethernet status ----------
-static bool g_ethOk = false;              // "network usable"
-static bool g_linkOn = false;             // cable/link state
+static bool g_ethOk = false;
+static bool g_linkOn = false;
 static unsigned long g_lastEthRetryMs = 0;
-static const unsigned long ETH_RETRY_MS = 5000; // retry Ethernet every 5s if failed
+static const unsigned long ETH_RETRY_MS = 5000;
 
 // ---------- JSON publish cache ----------
 static String g_lastJson = "{}";
 static unsigned long g_lastPublishMs = 0;
 
 // JSON rates
-static const unsigned long JSON_PERIOD_OK_MS   = 1000; // 1s when Ethernet is OK
-static const unsigned long JSON_PERIOD_FAIL_MS = 200;  // 200ms when Ethernet fails (change as you want)
+static const unsigned long JSON_PERIOD_OK_MS   = 1000;
+static const unsigned long JSON_PERIOD_FAIL_MS = 200;
+
+// ---------- Maintenance override (from website) ----------
+static volatile bool g_forceMaint = false;
+
+// ---------- Serial printing control ----------
+static bool g_printedLinksOnce = false;   // print web links only once when IP is valid
 
 // ------------------------------------------------------
 // EthernetServer shim (fixes ESP32 abstract Server issue)
@@ -70,13 +74,31 @@ static String index_html() {
   html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
   html += "<title>Occupancy Monitor</title></head><body>";
   html += "<h2>Smart Occupancy Monitor</h2>";
+
+  html += "<button id='maintBtn'>Maintenance: ...</button>";
+  html += "<p><small>Maintenance forces the LEDs into MAINT mode until turned off.</small></p>";
+
   html += "<pre id='out'>Loading...</pre>";
+
   html += "<script>";
+  html += "async function setMaint(on){";
+  html += "  try{ await fetch('/maint?on='+(on?1:0)); }catch(e){}";
+  html += "  await tick();";
+  html += "}";
+  html += "document.getElementById('maintBtn').addEventListener('click', async ()=>{";
+  html += "  const isOn = document.getElementById('maintBtn').dataset.on === '1';";
+  html += "  await setMaint(!isOn);";
+  html += "});";
+
   html += "async function tick(){";
   html += " try{";
   html += "  const r=await fetch('/data');";
   html += "  const j=await r.json();";
   html += "  document.getElementById('out').textContent=JSON.stringify(j,null,2);";
+  html += "  const maint = (j.maintenance === 'on');";
+  html += "  const b=document.getElementById('maintBtn');";
+  html += "  b.textContent='Maintenance: ' + (maint?'ON':'OFF');";
+  html += "  b.dataset.on = maint? '1':'0';";
   html += " }catch(e){document.getElementById('out').textContent='Error';}";
   html += "}";
   html += "tick(); setInterval(tick,1000);";
@@ -106,6 +128,24 @@ static void send_404(EthernetClient &client) {
   client.println("404 Not Found");
 }
 
+// Very small query parser: returns value for key in "?a=1&b=2"
+static String get_query_value(const String& pathAndQuery, const char* key) {
+  int q = pathAndQuery.indexOf('?');
+  if (q < 0) return "";
+
+  String qs = pathAndQuery.substring(q + 1);
+  String k = String(key) + "=";
+
+  int start = qs.indexOf(k);
+  if (start < 0) return "";
+  start += k.length();
+
+  int end = qs.indexOf('&', start);
+  if (end < 0) end = qs.length();
+
+  return qs.substring(start, end);
+}
+
 // -------------------- REQUEST HANDLER ------------------
 static void handle_client() {
   EthernetClient client = server.available();
@@ -125,12 +165,23 @@ static void handle_client() {
   if (s1 >= 0 && s2 > s1)
     path = reqLine.substring(s1 + 1, s2);
 
-  if (path == "/" || path.startsWith("/index")) {
+  String route = path;
+  int q = route.indexOf('?');
+  if (q >= 0) route = route.substring(0, q);
+
+  if (route == "/" || route.startsWith("/index")) {
     send_http(client, "text/html; charset=utf-8", index_html());
   }
-  else if (path == "/data") {
-    // Return the most recent JSON snapshot
+  else if (route == "/data") {
     send_http(client, "application/json", g_lastJson);
+  }
+  else if (route == "/maint") {
+    String v = get_query_value(path, "on");
+    if (v.length() > 0) {
+      g_forceMaint = (v == "1" || v == "true" || v == "on");
+    }
+    String body = String("{\"maintenance\":\"") + (g_forceMaint ? "on" : "off") + "\"}";
+    send_http(client, "application/json", body);
   }
   else {
     send_404(client);
@@ -141,18 +192,32 @@ static void handle_client() {
 }
 
 // -------------------- ETHERNET INIT / RETRY ------------
+static void print_links_once_if_needed() {
+  if (g_printedLinksOnce) return;
+  if (!g_ethOk) return;
+
+  IPAddress ip = Ethernet.localIP();
+
+  Serial.println("================================");
+  Serial.print("Web:   http://");
+  Serial.print(ip);
+  Serial.println("/");
+
+  Serial.print("JSON:  http://");
+  Serial.print(ip);
+  Serial.println("/data");
+  Serial.println("================================");
+
+  g_printedLinksOnce = true;
+}
+
 static void ethernet_try_begin() {
-  // Update link status
-  g_linkOn = (Ethernet.linkStatus() == LinkON);
+  Serial.println("Starting Ethernet...");
 
-  // If no link, we consider Ethernet not OK
-  if (!g_linkOn) {
-    g_ethOk = false;
-    return;
-  }
-
-  // Link is on: try DHCP first, fallback to static
-  Serial.println("Starting Ethernet DHCP...");
+  // IMPORTANT FIX:
+  // Always attempt begin first. On W5500, linkStatus() can be UNKNOWN/OFF
+  // until after the chip is initialized, so checking link first can cause
+  // infinite retries.
   if (Ethernet.begin(mac) == 0) {
     Serial.println("DHCP failed — using static IP");
     IPAddress ip(192, 168, 1, 50);
@@ -162,27 +227,28 @@ static void ethernet_try_begin() {
     Ethernet.begin(mac, ip, dns, gw, mask);
   }
 
+  // Read status AFTER begin
+  EthernetHardwareStatus hw = Ethernet.hardwareStatus();
+  EthernetLinkStatus ls = Ethernet.linkStatus();
   IPAddress ip = Ethernet.localIP();
-  g_ethOk = (ip[0] != 0); // crude but effective: 0.0.0.0 means no IP
+
+  Serial.print("HW: ");
+  Serial.println(hw == EthernetNoHardware ? "NO_HARDWARE" : "OK");
+
+  Serial.print("Link: ");
+  Serial.println(ls == LinkON ? "ON" : (ls == LinkOFF ? "OFF" : "UNKNOWN"));
 
   Serial.print("IP: ");
   Serial.println(ip);
 
-  Serial.print("Link: ");
-  Serial.println(g_linkOn ? "ON" : "OFF");
+  g_linkOn = (ls == LinkON);
+  g_ethOk  = (ip[0] != 0) && (hw != EthernetNoHardware);
 
   if (g_ethOk) {
     server.begin();
-    Serial.println("================================");
-    Serial.print("Web:   http://");
-    Serial.print(ip);
-    Serial.println("/");
-    Serial.print("JSON:  http://");
-    Serial.print(ip);
-    Serial.println("/data");
-    Serial.println("================================");
+    print_links_once_if_needed();
   } else {
-    Serial.println("Ethernet not OK (no valid IP).");
+    Serial.println("Ethernet not OK yet.");
   }
 }
 
@@ -198,12 +264,10 @@ static void ethernet_begin() {
     delay(200);
   }
 
-  // Try immediately
   ethernet_try_begin();
   g_lastEthRetryMs = millis();
 }
 
-// Retry Ethernet in the background if it failed
 static void ethernet_retry_if_needed() {
   const unsigned long now = millis();
   if (g_ethOk) return;
@@ -222,20 +286,23 @@ static void publish_json_periodic() {
   if (now - g_lastPublishMs < period) return;
   g_lastPublishMs = now;
 
-  JsonDocument doc;
+  StaticJsonDocument<256> doc;
   get_sensor_data(doc);
 
-  // Add Ethernet status into the JSON payload
   doc["eth_link"] = g_linkOn ? "on" : "off";
   doc["eth_ok"]   = g_ethOk ? "yes" : "no";
+
+  doc["maintenance"] = g_forceMaint ? "on" : "off";
+  if (g_forceMaint) {
+    doc["overall"] = "maintenance";
+  }
 
   g_state = state_machine_step(doc, g_state);
 
   g_lastJson = "";
   serializeJson(doc, g_lastJson);
 
-  // Always print to Serial; prints faster when Ethernet fails
-  Serial.println(g_lastJson);
+  // NO JSON printing to Serial
 }
 
 // -------------------- SETUP / LOOP ---------------------
@@ -246,7 +313,7 @@ void setup() {
   sensors_init(PIR_PIN, ECHO_PIN, TRIG_PIN);
   state_machine_init(RED_PIN, GREEN_PIN, 255);
 
-  // Force immediate JSON print at boot (even if Ethernet init blocks later)
+  // Build first JSON snapshot so /data works immediately
   g_lastPublishMs = millis() - JSON_PERIOD_FAIL_MS;
   publish_json_periodic();
 
@@ -254,10 +321,9 @@ void setup() {
 }
 
 void loop() {
-  publish_json_periodic();       // always prints; faster when Ethernet is down
-  ethernet_retry_if_needed();    // tries to recover Ethernet automatically
+  publish_json_periodic();
+  ethernet_retry_if_needed();
 
-  // Only bother serving clients if Ethernet is actually up
   if (g_ethOk) {
     handle_client();
     Ethernet.maintain();
