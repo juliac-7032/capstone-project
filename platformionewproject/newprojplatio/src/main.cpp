@@ -1,95 +1,110 @@
-#include <Arduino.h>
-#include <WiFi.h>
+
+#include "secrets.h"
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
 #include <ArduinoJson.h>
-#include <HTTPClient.h>
-
-const char* ssid = "";
-const char* password = "";
-
-//all of this will be our occupancy data
-char jsonOutput[128]; //store the json we want to post
-const char* key = "slay"; //words to put in the json object
-const char* value = "all day";
-
-// put function declarations here:
-void post(){
-
- if((WiFi.status() == WL_CONNECTED)){ //double check that the network is connected still
-    
-    HTTPClient client; //instance of HTTPClient class
-
-    client.begin("http://jsonplaceholder.typicode.com/posts"); //http that accepts posts (this is the API - we will have a different API)
-    client.addHeader("Content-Type", "application/json"); //tell API we're sending jason
-    
-    const size_t CAPACITY = JSON_OBJECT_SIZE(1); //fixed capacity when we make a json document
-    StaticJsonDocument<CAPACITY> doc; //create an empty json doc
-
-    //the json placeholder API should take care of the id for you
-    JsonObject object = doc.to<JsonObject>(); //put json object into json document
-    object[key] = value; //writing to the json object (which is now in the document)
-
-    serializeJson(doc, jsonOutput); //putting the doc we made (the doc has the object we made) into the jsonoutput char array we made
-
-    int httpCode = client.POST(String(jsonOutput)); //the value of this number will tell you if it was successful
-
-    if(httpCode > 0 ) {
-      String payload = client.getString(); //get the json information
-      Serial.println("\nStatuscode: " + String(httpCode)); //print whether it was successful
-      Serial.println(payload); //print the json infromation
-
-      client.end();
-    }
-
-  }
-  else {
-    Serial.println("connection lost");
-  }
+#include "WiFi.h"
 
 
+#define AWS_IOT_PUBLISH_TOPIC   "topics/occupancy"
+#define AWS_IOT_SUBSCRIBE_TOPIC "/response"
+
+bool PIR;
+int pir_pin = 8;
+
+
+
+WiFiClientSecure net = WiFiClientSecure();
+PubSubClient client(net);
+
+void messageHandler(char* topic, byte* payload, unsigned int length)
+{
+  Serial.print("incoming: ");
+  Serial.println(topic);
+
+  StaticJsonDocument<200> doc;
+  deserializeJson(doc, payload);
+  const char* message = doc["message"];
+  Serial.println(message);
 }
-void setup() {
- 
-  Serial.begin(9600);
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi"); //connect to network
 
-  while (WiFi.status() != WL_CONNECTED){ //check that we are connected
-    Serial.print(".");
+
+void connectAWS()
+{
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  Serial.println("Connecting to Wi-Fi");
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
+    Serial.print(WiFi.status());
   }
 
-  Serial.println("\nConnected to WiFi"); //print out IP address
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP()); 
+  // Configure WiFiClientSecure to use the AWS IoT device credentials
+  net.setCACert(AWS_CERT_CA);
+  net.setCertificate(AWS_CERT_CRT);
+  net.setPrivateKey(AWS_CERT_PRIVATE);
+
+  // Connect to the MQTT broker on the AWS endpoint we defined earlier
+  client.setServer(AWS_IOT_ENDPOINT, 8883);
+
+  // Create a message handler
+  client.setCallback(messageHandler);
+
+  Serial.println("Connecting to AWS IOT");
+
+  while (!client.connect(THINGNAME))
+  {
+    Serial.print(".");
+    delay(100);
+  }
+
+  if (!client.connected())
+  {
+    Serial.println("AWS IoT Timeout!");
+    return;
+  }
+
+  // Subscribe to a topic
+  client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
+
+  Serial.println("AWS IoT Connected!");
 }
 
-void loop() {
+void publishMessage()
+{
+  StaticJsonDocument<200> doc;
+  doc["PIR"] = PIR;
   
-  post();
- 
-  delay(10000);
+  char jsonBuffer[512];
+  serializeJson(doc, jsonBuffer); // print to client
 
+  client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
 }
 
-// put function definitions here:
 
 
-//pseudocode
-//read microwave data
+void setup()
+{
+  pinMode(pir_pin, INPUT);
+  Serial.begin(9600);
+  connectAWS();
+  
+}
 
+void loop()
+{
+  PIR = digitalRead(pir_pin);
 
-//1.
-//create json objects to store the data
-//"occupied": yes
-//post json to our API - let software take it from there
+  Serial.println(PIR);
 
-//2. (could be at the same time or we could read the json that just got created)
-//if occupied
-//  turn the light red (change red pwm to 100 and the others to 0)
-//else if available
-//  turn the light green (green duty cycle)
-//else if cleaning ****for the cleaning should we do this as a schedule (we take info from the API that it's scheduled for maintenance)?
-//  turn yellow (red 50, green 50)
+  publishMessage();
+  client.loop();
+  delay(1000);
+}
+
 
 
 
