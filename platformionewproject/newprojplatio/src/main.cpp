@@ -9,25 +9,26 @@
 #define AWS_IOT_PUBLISH_TOPIC   "topics/occupancy"
 #define AWS_IOT_SUBSCRIBE_TOPIC "/response"
 
-bool PIR;
-int pir_pin = 8;
-
-
 
 WiFiClientSecure net = WiFiClientSecure();
 PubSubClient client(net);
 
-void messageHandler(char* topic, byte* payload, unsigned int length)
+JsonDocument messageHandler(char* topic, byte* payload, unsigned int length)
 {
   Serial.print("incoming: ");
   Serial.println(topic);
-
-  StaticJsonDocument<200> doc;
+ 
+  JsonDocument doc;
   deserializeJson(doc, payload);
-  const char* message = doc["message"];
-  Serial.println(message);
+  //serializeJson(doc, Serial);
+
+  return doc;
+
 }
 
+void print_incoming(JsonDocument data){
+  serializeJson(data, Serial);
+}
 
 void connectAWS()
 {
@@ -76,7 +77,7 @@ void connectAWS()
 void publishMessage()
 {
   StaticJsonDocument<200> doc;
-  doc["PIR"] = PIR;
+  doc["test"] = "test";
   
   char jsonBuffer[512];
   serializeJson(doc, jsonBuffer); // print to client
@@ -85,10 +86,8 @@ void publishMessage()
 }
 
 
-
 void setup()
 {
-  pinMode(pir_pin, INPUT);
   Serial.begin(9600);
   connectAWS();
   
@@ -96,11 +95,11 @@ void setup()
 
 void loop()
 {
-  PIR = digitalRead(pir_pin);
+  
 
-  Serial.println(PIR);
+  //Serial.println("in loop");
+  //publishMessage();
 
-  publishMessage();
   client.loop();
   delay(1000);
 }
