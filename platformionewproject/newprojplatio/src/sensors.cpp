@@ -1,9 +1,6 @@
 #include "sensors.h"
 #include <Arduino.h>
 
-
-
-
 static int g_pirPin  = -1;
 static int g_echoPin = -1;
 static int g_trigPin = -1;

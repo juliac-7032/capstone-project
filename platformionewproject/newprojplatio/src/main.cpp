@@ -46,12 +46,14 @@ static String g_lastJson = "{}";
 static unsigned long g_lastPublishMs = 0;
 
 // JSON rates
+//don't need
 static const unsigned long JSON_PERIOD_OK_MS   = 1000; // 1s when Ethernet is OK
 static const unsigned long JSON_PERIOD_FAIL_MS = 200;  // 200ms when Ethernet fails (change as you want)
 
 // ------------------------------------------------------
 // EthernetServer shim (fixes ESP32 abstract Server issue)
 // ------------------------------------------------------
+//don't need
 class EthernetServerFixed : public EthernetServer {
 public:
   explicit EthernetServerFixed(uint16_t port) : EthernetServer(port) {}
@@ -64,6 +66,7 @@ public:
 static EthernetServerFixed server(80);
 
 // -------------------- HTML PAGE ------------------------
+//don't need
 static String index_html() {
   String html;
   html += "<!doctype html><html><head><meta charset='utf-8'>";
@@ -85,6 +88,7 @@ static String index_html() {
 }
 
 // -------------------- HTTP HELPERS ---------------------
+// don't need
 static void send_http(EthernetClient &client,
                       const char* contentType,
                       const String& body) {
@@ -107,6 +111,7 @@ static void send_404(EthernetClient &client) {
 }
 
 // -------------------- REQUEST HANDLER ------------------
+//change to MQTT
 static void handle_client() {
   EthernetClient client = server.available();
   if (!client) return;
@@ -141,6 +146,7 @@ static void handle_client() {
 }
 
 // -------------------- ETHERNET INIT / RETRY ------------
+// Y - rework
 static void ethernet_try_begin() {
   // Update link status
   g_linkOn = (Ethernet.linkStatus() == LinkON);
@@ -204,6 +210,7 @@ static void ethernet_begin() {
 }
 
 // Retry Ethernet in the background if it failed
+//Maybe
 static void ethernet_retry_if_needed() {
   const unsigned long now = millis();
   if (g_ethOk) return;
@@ -215,6 +222,7 @@ static void ethernet_retry_if_needed() {
 }
 
 // -------------------- JSON PUBLISH ---------------------
+//Y
 static void publish_json_periodic() {
   const unsigned long now = millis();
   const unsigned long period = g_ethOk ? JSON_PERIOD_OK_MS : JSON_PERIOD_FAIL_MS;

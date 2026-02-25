@@ -21,7 +21,7 @@ static void state_enter(state_e to) {
   switch (to) {
     case STATE_UNOCC:
       pwm_write(g_chGreen, g_dutyOn);
-      pwm_write(g_chRed,   0);
+      pwm_write(g_chRed, 0);
       break;
 
     case STATE_OCC:
