@@ -11,7 +11,7 @@ static const int g_pwmRes  = 8;    // 8-bit => 0..255
 static const int g_chRed   = 0;
 static const int g_chGreen = 1;
 
-static uint8_t g_dutyOn = 255;
+static uint8_t g_dutyOn = 100;
 
 static void pwm_write(int channel, uint8_t duty) {
   ledcWrite(channel, duty);
