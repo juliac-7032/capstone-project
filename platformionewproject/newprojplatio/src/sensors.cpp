@@ -60,4 +60,3 @@ if(_PIR)
   serializeJson(_sensor_data, Serial); //final serial print
   Serial.println(" ");
 }
- 
