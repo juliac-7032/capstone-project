@@ -1,5 +1,5 @@
 #include "sensors.h"
-#include <ArduinoJson.h>
+#include <Arduino.h>
 
 static int g_pirPin  = -1;
 static int g_echoPin = -1;
@@ -7,10 +7,9 @@ static int g_trigPin = -1;
 
 static const float SPEED_OF_SOUND_CM_PER_US = 0.0343f;
 static const float OCCUPIED_DISTANCE_CM = 800.0f;
-static const unsigned long PULSE_TIMEOUT_US = 30000;
+static const unsigned long PULSE_TIMEOUT_US = 30000; // 30ms
 
-void sensors_init(int pir_pin, int echo_pin, int trig_pin)
-{
+void sensors_init(int pir_pin, int echo_pin, int trig_pin) {
   g_pirPin  = pir_pin;
   g_echoPin = echo_pin;
   g_trigPin = trig_pin;
@@ -18,11 +17,12 @@ void sensors_init(int pir_pin, int echo_pin, int trig_pin)
   pinMode(g_pirPin, INPUT);
   pinMode(g_echoPin, INPUT);
   pinMode(g_trigPin, OUTPUT);
+
   digitalWrite(g_trigPin, LOW);
 }
 
-static bool read_ultrasonic(float& distance_cm_out)
-{
+static bool read_ultrasonic(float& distance_cm_out) {
+  // Trigger
   digitalWrite(g_trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(g_trigPin, HIGH);
@@ -30,9 +30,7 @@ static bool read_ultrasonic(float& distance_cm_out)
   digitalWrite(g_trigPin, LOW);
 
   unsigned long duration = pulseIn(g_echoPin, HIGH, PULSE_TIMEOUT_US);
-
-  if (duration == 0)
-  {
+  if (duration == 0) {
     distance_cm_out = 99999.0f;
     return false;
   }
@@ -41,10 +39,8 @@ static bool read_ultrasonic(float& distance_cm_out)
   return true;
 }
 
-void build_sensor_json(String& out)
-{
-  StaticJsonDocument<256> doc;
-
+void get_sensor_data(JsonDocument& doc) {
+  doc.clear();
   doc["id"] = "001";
 
   bool pirOcc = (digitalRead(g_pirPin) == HIGH);
@@ -58,7 +54,4 @@ void build_sensor_json(String& out)
   doc["distance_cm"] = dist;
 
   doc["overall"] = (pirOcc || usOcc) ? "occupied" : "unoccupied";
-
-  out = "";
-  serializeJson(doc, out);
 }

@@ -36,12 +36,10 @@ static unsigned long g_lastMqttRetryMs = 0;
 static const unsigned long MQTT_RETRY_MS = 3000;
 
 // ================= ETHERNET =================
-static void ethernet_try_begin()
-{
+static void ethernet_try_begin() {
   Serial.println("Starting Ethernet...");
 
-  if (Ethernet.begin(mac) == 0)
-  {
+  if (Ethernet.begin(mac) == 0) {
     Serial.println("DHCP failed — using static IP");
     IPAddress ip(192,168,1,50);
     IPAddress dns(192,168,1,1);
@@ -62,8 +60,7 @@ static void ethernet_try_begin()
   g_ethOk = (hw != EthernetNoHardware) && (ip[0] != 0);
 }
 
-static void ethernet_retry_if_needed()
-{
+static void ethernet_retry_if_needed() {
   if (g_ethOk) return;
 
   unsigned long now = millis();
@@ -75,8 +72,7 @@ static void ethernet_retry_if_needed()
 }
 
 // ================= MQTT =================
-static void mqtt_connect_if_needed()
-{
+static void mqtt_connect_if_needed() {
   if (!g_ethOk) return;
   if (mqtt.connected()) return;
 
@@ -86,32 +82,25 @@ static void mqtt_connect_if_needed()
   g_lastMqttRetryMs = now;
 
   Serial.print("MQTT connect... ");
-  if (mqtt.connect(MQTT_CLIENT_ID))
-  {
+  if (mqtt.connect(MQTT_CLIENT_ID)) {
     Serial.println("OK");
-  }
-  else
-  {
+  } else {
     Serial.print("FAIL rc=");
     Serial.println(mqtt.state());
   }
 }
 
-void mqtt_publish(const String& payload)
-{
-  if (mqtt.connected())
-  {
+void mqtt_publish(const String& payload) {
+  if (mqtt.connected()) {
     mqtt.publish(MQTT_PUB_TOPIC, payload.c_str());
   }
 }
 
-void ethernet_mqtt_init()
-{
+void ethernet_mqtt_init() {
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, W5500_CS);
   Ethernet.init(W5500_CS);
 
-  if (W5500_RST >= 0)
-  {
+  if (W5500_RST >= 0) {
     pinMode(W5500_RST, OUTPUT);
     digitalWrite(W5500_RST, LOW);
     delay(50);
@@ -120,12 +109,10 @@ void ethernet_mqtt_init()
   }
 
   ethernet_try_begin();
-
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
 }
 
-void ethernet_mqtt_loop()
-{
+void ethernet_mqtt_loop() {
   ethernet_retry_if_needed();
   mqtt_connect_if_needed();
 
