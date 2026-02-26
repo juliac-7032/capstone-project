@@ -20,6 +20,7 @@ JsonDocument messageHandler(char* topic, byte* payload, unsigned int length)
  
   JsonDocument doc;
   deserializeJson(doc, payload);
+  //call a FSM function? to change the light? 
   //serializeJson(doc, Serial);
 
   return doc;
