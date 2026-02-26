@@ -1,62 +1,64 @@
+#include "sensors.h"
 #include <ArduinoJson.h>
-#include <Arduino.h>
 
-int _PIR_pin; 
-int _echo_pin; 
-int _trig_pin;
-bool _US;
-bool _PIR;
+static int g_pirPin  = -1;
+static int g_echoPin = -1;
+static int g_trigPin = -1;
 
-//sensor vars
-int _PIR_val = 0;
-int _echo_val = 0;
-int _trig_val;
-float _duration, _distance; 
+static const float SPEED_OF_SOUND_CM_PER_US = 0.0343f;
+static const float OCCUPIED_DISTANCE_CM = 800.0f;
+static const unsigned long PULSE_TIMEOUT_US = 30000;
 
-void get_sensor_data() {
-JsonDocument _sensor_data;
-  _sensor_data["id"] = "001"; 
+void sensors_init(int pir_pin, int echo_pin, int trig_pin)
+{
+  g_pirPin  = pir_pin;
+  g_echoPin = echo_pin;
+  g_trigPin = trig_pin;
 
-  digitalWrite(_trig_pin, LOW);  
-	delayMicroseconds(2);  
-	digitalWrite(_trig_pin, HIGH);  
-	delayMicroseconds(10);  
-	digitalWrite(_trig_pin, LOW);  
+  pinMode(g_pirPin, INPUT);
+  pinMode(g_echoPin, INPUT);
+  pinMode(g_trigPin, OUTPUT);
+  digitalWrite(g_trigPin, LOW);
+}
 
-  _duration = pulseIn(_echo_pin, HIGH); //time in microseconds
-  _distance = (_duration*.0343)/2; //_distance in cm 0.0343 is speed of sound in cm per microsecond
-  if(_distance < 800){
-    _US = true;
-    
-    _sensor_data["US"] = "occupied";
-  }
-  else{
-    
-    _sensor_data["US"] = "unoccupied";
-    _US = false;
-  }
+static bool read_ultrasonic(float& distance_cm_out)
+{
+  digitalWrite(g_trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(g_trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(g_trigPin, LOW);
 
- _PIR_val = digitalRead(_PIR_pin);
-  if(_PIR_val == HIGH){ //high on pir pin means motion detected
-    _sensor_data["PIR"] = "occupied";
-    _PIR = true; 
-  }
-  else{
-    _sensor_data["PIR"] = "unoccupied";
-    _PIR = false; 
+  unsigned long duration = pulseIn(g_echoPin, HIGH, PULSE_TIMEOUT_US);
+
+  if (duration == 0)
+  {
+    distance_cm_out = 99999.0f;
+    return false;
   }
 
-//logic
-if(_PIR)
-    _sensor_data["overall"] = "occupied";
-  else
-    if(_US)
-      
-      _sensor_data["overall"] = "occupied";
-    else
-      
-      _sensor_data["overall"] = "unoccupied";
-  
-  serializeJson(_sensor_data, Serial); //final serial print
-  Serial.println(" ");
+  distance_cm_out = (duration * SPEED_OF_SOUND_CM_PER_US) / 2.0f;
+  return true;
+}
+
+void build_sensor_json(String& out)
+{
+  StaticJsonDocument<256> doc;
+
+  doc["id"] = "001";
+
+  bool pirOcc = (digitalRead(g_pirPin) == HIGH);
+  doc["PIR"] = pirOcc ? "occupied" : "unoccupied";
+
+  float dist = 0.0f;
+  bool usValid = read_ultrasonic(dist);
+  bool usOcc = usValid && (dist < OCCUPIED_DISTANCE_CM);
+
+  doc["US"] = usOcc ? "occupied" : "unoccupied";
+  doc["distance_cm"] = dist;
+
+  doc["overall"] = (pirOcc || usOcc) ? "occupied" : "unoccupied";
+
+  out = "";
+  serializeJson(doc, out);
 }
