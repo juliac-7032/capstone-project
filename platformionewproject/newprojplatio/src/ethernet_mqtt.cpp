@@ -132,11 +132,18 @@ void messageHandler(char* topic, byte* payload, unsigned int length)
   Serial.println(topic);
   JsonDocument doc;
   StaticJsonDocument<256> doc;          
-  deserializeJson(doc, payload, length);
-  
-  
+  deserializeJson(doc, payload, length); //FIXME what does the json doc look like right now? We need to read doc["current state"]
+  //get the current state from the message as state_e
+  state_e curr = doc["current"];
 
+
+  state_machine_step(doc, curr);
+  //use example code from repo - put the output next into pointer and send the current state (the next is the current)
   
+  //send the next state return var (send to the AWS that the state in fact changed)
+
+  //put return into a json doc to say "state changed to: ____"
+
 }
 
 
