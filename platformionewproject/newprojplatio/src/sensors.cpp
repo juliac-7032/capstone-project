@@ -1,63 +1,80 @@
-#include <ArduinoJson.h>
+#include "state_machine.h"
 #include <Arduino.h>
+#include <string.h>
 
-int _PIR_pin; 
-int _echo_pin; 
-int _trig_pin;
-bool _US;
-bool _PIR;
+// ESP32-C3 LEDC PWM config
+static int g_redPin   = -1;
+static int g_greenPin = -1;
 
-//sensor vars
-int _PIR_val = 0;
-int _echo_val = 0;
-int _trig_val;
-float _duration, _distance; 
+static const int g_pwmFreq = 5000; // 5 kHz
+static const int g_pwmRes  = 8;    // 8-bit => 0..255
+static const int g_chRed   = 0;
+static const int g_chGreen = 1;
 
-void get_sensor_data() {
-JsonDocument _sensor_data;
-  _sensor_data["id"] = "001"; 
+static uint8_t g_dutyOn = 100;
 
-  digitalWrite(_trig_pin, LOW);  
-	delayMicroseconds(2);  
-	digitalWrite(_trig_pin, HIGH);  
-	delayMicroseconds(10);  
-	digitalWrite(_trig_pin, LOW);  
-
-  _duration = pulseIn(_echo_pin, HIGH); //time in microseconds
-  _distance = (_duration*.0343)/2; //_distance in cm 0.0343 is speed of sound in cm per microsecond
-  if(_distance < 800){
-    _US = true;
-    
-    _sensor_data["US"] = "occupied";
-  }
-  else{
-    
-    _sensor_data["US"] = "unoccupied";
-    _US = false;
-  }
-
- _PIR_val = digitalRead(_PIR_pin);
-  if(_PIR_val == HIGH){ //high on pir pin means motion detected
-    _sensor_data["PIR"] = "occupied";
-    _PIR = true; 
-  }
-  else{
-    _sensor_data["PIR"] = "unoccupied";
-    _PIR = false; 
-  }
-
-//logic
-if(_PIR)
-    _sensor_data["overall"] = "occupied";
-  else
-    if(_US)
-      
-      _sensor_data["overall"] = "occupied";
-    else
-      
-      _sensor_data["overall"] = "unoccupied";
-  
-  serializeJson(_sensor_data, Serial); //final serial print
-  Serial.println(" ");
+static void pwm_write(int channel, uint8_t duty) {
+  ledcWrite(channel, duty);
 }
- 
+
+static void state_enter(state_e to) {
+  switch (to) {
+    case STATE_UNOCC:
+      pwm_write(g_chGreen, g_dutyOn);
+      pwm_write(g_chRed, 0);
+      break;
+
+    case STATE_OCC:
+      pwm_write(g_chRed,   g_dutyOn);
+      pwm_write(g_chGreen, 0);
+      break;
+
+    case STATE_MAINT:
+      // Yellow = both on
+      pwm_write(g_chRed,   g_dutyOn);
+      pwm_write(g_chGreen, g_dutyOn);
+      break;
+  }
+}
+
+void state_machine_init(int red_pin, int green_pin, uint8_t duty_on) {
+  g_redPin = red_pin;
+  g_greenPin = green_pin;
+  g_dutyOn = duty_on;
+
+  pinMode(g_redPin, OUTPUT);
+  pinMode(g_greenPin, OUTPUT);
+
+  // Setup PWM channels
+  ledcSetup(g_chRed,   g_pwmFreq, g_pwmRes);
+  ledcSetup(g_chGreen, g_pwmFreq, g_pwmRes);
+
+  ledcAttachPin(g_redPin,   g_chRed);
+  ledcAttachPin(g_greenPin, g_chGreen);
+
+  // Default boot state
+  state_enter(STATE_UNOCC);
+}
+
+state_e state_machine_step(const JsonDocument& data, state_e current_state) {
+  const char* overall = data["overall"] | "";
+
+  state_e next = current_state;
+
+  if (strcmp(overall, "occupied") == 0) {
+    next = STATE_OCC;
+  } else if (strcmp(overall, "unoccupied") == 0) {
+    next = STATE_UNOCC;
+  } else if (strcmp(overall, "maintenance") == 0) {
+    next = STATE_MAINT;
+  } else {
+    // Fail-safe
+    next = STATE_MAINT;
+  }
+
+  if (next != current_state) {
+    state_enter(next);
+  }
+
+  return next;
+}
