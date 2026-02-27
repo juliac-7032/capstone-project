@@ -4,6 +4,7 @@
 #include <Ethernet_Generic.h>
 #include <PubSubClient.h>
 
+
 // ======== W5500 CONFIG ========
 static const int W5500_CS  = 7;
 static const int W5500_RST = -1;
@@ -122,6 +123,7 @@ void ethernet_mqtt_init()
   ethernet_try_begin();
 
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setCallback(messageHandler);
 }
 
 void messageHandler(char* topic, byte* payload, unsigned int length)
@@ -129,13 +131,15 @@ void messageHandler(char* topic, byte* payload, unsigned int length)
   Serial.print("incoming: ");
   Serial.println(topic);
   JsonDocument doc;
-  deserializeJson(doc, payload);
-  //serializeJson(doc, Serial);
+  StaticJsonDocument<256> doc;          
+  deserializeJson(doc, payload, length);
+  
+  
 
   
 }
 
-mqtt.setCallback(messageHandler);
+
 
 void ethernet_mqtt_loop()
 {

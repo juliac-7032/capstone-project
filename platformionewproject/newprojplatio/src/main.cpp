@@ -1,106 +1,13 @@
-<<<<<<< Updated upstream
-=======
 #include <Arduino.h>
 #include "ethernet_mqtt.h"
 #include "sensors.h"
-#include "state_machine.h"
->>>>>>> Stashed changes
+#include "state_machine.h" 
 
-#include "secrets.h"
-#include <WiFiClientSecure.h>
-#include <PubSubClient.h>
-#include <ArduinoJson.h>
-#include "WiFi.h"
+// ======== PIN CONFIG ========
+static const int PIR_PIN  = 10;
+static const int TRIG_PIN = 3;
+static const int ECHO_PIN = 1;
 
-
-#define AWS_IOT_PUBLISH_TOPIC   "topics/occupancy"
-#define AWS_IOT_SUBSCRIBE_TOPIC "/response"
-
-
-WiFiClientSecure net = WiFiClientSecure();
-PubSubClient client(net);
-
-JsonDocument messageHandler(char* topic, byte* payload, unsigned int length)
-{
-  Serial.print("incoming: ");
-  Serial.println(topic);
- 
-  JsonDocument doc;
-  deserializeJson(doc, payload);
-  //call a FSM function? to change the light? 
-  //serializeJson(doc, Serial);
-
-  return doc;
-
-}
-
-void print_incoming(JsonDocument data){
-  serializeJson(data, Serial);
-}
-
-void connectAWS()
-{
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  Serial.println("Connecting to Wi-Fi");
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(WiFi.status());
-  }
-
-  // Configure WiFiClientSecure to use the AWS IoT device credentials
-  net.setCACert(AWS_CERT_CA);
-  net.setCertificate(AWS_CERT_CRT);
-  net.setPrivateKey(AWS_CERT_PRIVATE);
-
-  // Connect to the MQTT broker on the AWS endpoint we defined earlier
-  client.setServer(AWS_IOT_ENDPOINT, 8883);
-
-  // Create a message handler
-  client.setCallback(messageHandler);
-
-  Serial.println("Connecting to AWS IOT");
-
-  while (!client.connect(THINGNAME))
-  {
-    Serial.print(".");
-    delay(100);
-  }
-
-  if (!client.connected())
-  {
-    Serial.println("AWS IoT Timeout!");
-    return;
-  }
-
-  // Subscribe to a topic
-  client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
-
-  Serial.println("AWS IoT Connected!");
-}
-
-void publishMessage()
-{
-  StaticJsonDocument<200> doc;
-  doc["test"] = "test";
-  
-  char jsonBuffer[512];
-  serializeJson(doc, jsonBuffer); // print to client
-
-  client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
-}
-
-<<<<<<< Updated upstream
-
-void setup()
-{
-  Serial.begin(9600);
-  connectAWS();
-  
-=======
 int RED_PIN = 8;
 int GREEN_PIN = 9;
 uint8_t duty = 100; 
@@ -118,20 +25,23 @@ void setup()
   state_machine_init(RED_PIN, GREEN_PIN, duty);
 
   ethernet_mqtt_init();
->>>>>>> Stashed changes
 }
 
 void loop()
 {
-  
+  ethernet_mqtt_loop();
 
-  //Serial.println("in loop");
-  //publishMessage();
 
-  client.loop();
-  delay(1000);
+
+  unsigned long now = millis();
+  if (now - g_lastPublishMs >= PUBLISH_INTERVAL_MS)
+  {
+    g_lastPublishMs = now;
+
+    String payload;
+    build_sensor_json(payload);
+
+    Serial.println(payload);
+    mqtt_publish(payload);
+  }
 }
-
-
-
-
