@@ -1,9 +1,8 @@
 #include "ethernet_mqtt.h"
-#include <ArduinoJson.h> 
+#include "state_machine.h"
 #include <SPI.h>
 #include <Ethernet_Generic.h>
 #include <PubSubClient.h>
-
 
 // ======== W5500 CONFIG ========
 static const int W5500_CS  = 7;
@@ -130,20 +129,9 @@ void messageHandler(char* topic, byte* payload, unsigned int length)
 {
   Serial.print("incoming: ");
   Serial.println(topic);
-  JsonDocument doc;
-  StaticJsonDocument<256> doc;          
-  deserializeJson(doc, payload, length); //FIXME what does the json doc look like right now? We need to read doc["current state"]
-  //get the current state from the message as state_e
-  state_e curr = doc["current"];
-
-
-  state_machine_step(doc, curr);
-  //use example code from repo - put the output next into pointer and send the current state (the next is the current)
-  
-  //send the next state return var (send to the AWS that the state in fact changed)
-
-  //put return into a json doc to say "state changed to: ____"
-
+  JsonDocument doc;         
+  deserializeJson(doc, payload); 
+  state_machine_step(doc); //take in the doc and step state machine. 
 }
 
 

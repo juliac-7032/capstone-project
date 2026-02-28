@@ -1,6 +1,4 @@
 #include "state_machine.h"
-#include <Arduino.h>
-#include <string.h>
 
 // ESP32-C3 LEDC PWM config
 static int g_redPin   = -1;
@@ -56,10 +54,11 @@ void state_machine_init(int red_pin, int green_pin, uint8_t duty_on) {
   state_enter(STATE_UNOCC);
 }
 
-state_e state_machine_step(const JsonDocument& data, state_e current_state) {
+void state_machine_step(const JsonDocument& data) {
   const char* overall = data["overall"] | "";
+  state_e curr = data["current"];
 
-  state_e next = current_state;
+  state_e next = curr;
 
   if (strcmp(overall, "occupied") == 0) {
     next = STATE_OCC;
@@ -72,9 +71,8 @@ state_e state_machine_step(const JsonDocument& data, state_e current_state) {
     next = STATE_MAINT;
   }
 
-  if (next != current_state) {
+  if (next != curr) {
     state_enter(next);
   }
 
-  return next;
 }
