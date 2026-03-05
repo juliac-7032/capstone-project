@@ -1,4 +1,6 @@
 #include "sensors.h"
+#include <chrono>
+#include <ctime>
 
 static int g_pirPin  = -1;
 static int g_echoPin = -1;
@@ -44,17 +46,18 @@ JsonDocument get_sensor_data() {
   JsonDocument doc;
   doc.clear();
   doc["id"] = "001";
+  doc["timestamp"] = std::chrono::system_clock::now();
 
   bool pir = (digitalRead(g_pirPin) == HIGH);
 
   float distance_cm = 0.0f;
   bool us = read_ultrasonic_occupied(distance_cm);
 
-  doc["PIR"] = pir ? "occupied" : "unoccupied";
-  doc["US"]  = us  ? "occupied" : "unoccupied";
-  doc["distance_cm"] = distance_cm;
+  //doc["PIR"] = pir ? "occupied" : "unoccupied";
+  //doc["US"]  = us  ? "occupied" : "unoccupied";
+  //doc["distance_cm"] = distance_cm;
 
   // Overall = PIR OR US
-  doc["overall"] = (pir || us) ? "occupied" : "unoccupied";
+  doc["occupied"] = (pir || us) ? "occupied" : "unoccupied";
 
 }

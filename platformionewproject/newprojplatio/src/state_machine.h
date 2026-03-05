@@ -9,7 +9,8 @@
 typedef enum {
   STATE_UNOCC = 0,
   STATE_OCC   = 1,
-  STATE_MAINT = 2
+  STATE_MAINT = 2,
+  STATE_ID = 3
 } state_e;
 
 
