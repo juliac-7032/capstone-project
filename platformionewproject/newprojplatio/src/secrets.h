@@ -3,8 +3,8 @@
 #define SECRET
 #define THINGNAME "OccupancySensor1"                         //change this
 
-const char WIFI_SSID[] = "Test";               //change this
-const char WIFI_PASSWORD[] = "14843410";           //change this
+const char WIFI_SSID[] = "TELUS1309-2.4G";               //change this
+const char WIFI_PASSWORD[] = "cdp28qbghp";           //change this
 const char AWS_IOT_ENDPOINT[] = "a36jo16u5z875d-ats.iot.ca-central-1.amazonaws.com";       //change this
 
 // Amazon Root CA 1

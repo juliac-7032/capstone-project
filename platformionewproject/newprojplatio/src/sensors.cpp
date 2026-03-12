@@ -1,6 +1,7 @@
 #include "sensors.h"
 #include <chrono>
 #include <ctime>
+#include <cstdio>
 
 static int g_pirPin  = -1;
 static int g_echoPin = -1;
@@ -46,7 +47,22 @@ JsonDocument get_sensor_data() {
   JsonDocument doc;
   doc.clear();
   doc["id"] = "001";
-  doc["timestamp"] = std::chrono::system_clock::now();
+
+   // Format timestamp as ISO 8601-like string with microseconds
+  auto now = std::chrono::system_clock::now();
+  auto now_us = std::chrono::time_point_cast<std::chrono::microseconds>(now);
+  auto epoch = now_us.time_since_epoch();
+  long long micros = std::chrono::duration_cast<std::chrono::microseconds>(epoch).count();
+  std::time_t tt = std::chrono::system_clock::to_time_t(now);
+  std::tm tm = *std::localtime(&tt);
+  char buffer[32];
+  sprintf(buffer, "%04d-%02d-%02dT%02d:%02d:%02d.%06lld", 
+          tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, 
+          tm.tm_hour, tm.tm_min, tm.tm_sec, micros % 1000000);
+  doc["timestamp"] = buffer;
+
+
+
 
   bool pir = (digitalRead(g_pirPin) == HIGH);
 
