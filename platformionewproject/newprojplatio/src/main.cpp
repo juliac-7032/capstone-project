@@ -1,4 +1,3 @@
-
 #include "secrets.h"
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
@@ -7,7 +6,7 @@
 
 
 #define AWS_IOT_PUBLISH_TOPIC   "topics/occupancy"
-#define AWS_IOT_SUBSCRIBE_TOPIC "/response"
+#define AWS_IOT_SUBSCRIBE_TOPIC "devices/{device_id}/mode"
 
 
 WiFiClientSecure net = WiFiClientSecure();
@@ -77,10 +76,11 @@ void connectAWS()
 
 void publishMessage()
 {
-  StaticJsonDocument<200> doc;
+  JsonDocument doc;
   doc["test"] = "test";
   
   char jsonBuffer[512];
+  //serializeJson(doc, Serial);
   serializeJson(doc, jsonBuffer); // print to client
 
   client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
@@ -96,10 +96,8 @@ void setup()
 
 void loop()
 {
-  
-
   //Serial.println("in loop");
-  //publishMessage();
+  publishMessage();
 
   client.loop();
   delay(1000);
