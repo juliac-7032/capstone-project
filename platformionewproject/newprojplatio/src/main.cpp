@@ -8,7 +8,7 @@
 
 
 #define AWS_IOT_PUBLISH_TOPIC   "topics/occupancy"
-#define AWS_IOT_SUBSCRIBE_TOPIC "devices/{device_id}/mode"
+#define AWS_IOT_SUBSCRIBE_TOPIC "devices/001/mode"
 
 
 // ======== PIN CONFIG ========
